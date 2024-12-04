@@ -1,0 +1,23 @@
+{
+    "name": "dschledermann/json",
+    "description": "Encode and decode JSON objects to custom PHP classes",
+    "type": "library",
+    "license": "GPL-3.0-or-later",
+    "autoload": {
+        "psr-4": {
+            "Dschledermann\\Json\\": "src/",
+	    "Tests\\Dschledermann\\Json\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Daniel Schledermann",
+            "email": "daniel@schledermann.net"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^10.5",
+        "jawira/case-converter": "^3.5",
+        "phpstan/phpstan": "^2.0"
+    }
+}
