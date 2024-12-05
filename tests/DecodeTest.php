@@ -56,7 +56,7 @@ class DecodeTest extends TestCase
     public function testDecodingWithCaseConverter(): void
     {
         $decoder = (new Coder())->withKeyCaseConverter(function(string $key): string {
-            return (new Convert($key))->fromCamel()->toSnake();
+            return (new Convert($key))->toSnake();
         });
 
         $this->assertEquals(

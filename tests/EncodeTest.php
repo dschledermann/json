@@ -65,7 +65,7 @@ class EncodeTest extends TestCase
         $encoder = (new Coder())->withKeyCaseConverter(
             function(string $from): string {
                 $convert = new Convert($from);
-                return $convert->fromCamel()->toSnake();
+                return $convert->toSnake();
             }
         );
 
