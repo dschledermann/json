@@ -1,12 +1,12 @@
 {
-    "name": "dschledermann/json",
-    "description": "Encode and decode JSON objects to custom PHP classes",
+    "name": "dschledermann/json-coder",
+    "description": "Encode and decode JSON objects from and to custom PHP classes",
     "type": "library",
     "license": "GPL-3.0-or-later",
     "autoload": {
         "psr-4": {
-            "Dschledermann\\Json\\": "src/",
-	    "Tests\\Dschledermann\\Json\\": "tests/"
+            "Dschledermann\\JsonCoder\\": "src/",
+	    "Tests\\Dschledermann\\JsonCoder\\": "tests/"
         }
     },
     "authors": [
@@ -17,7 +17,6 @@
     ],
     "require-dev": {
         "phpunit/phpunit": "^10.5",
-        "jawira/case-converter": "^3.5",
-        "phpstan/phpstan": "^2.0"
+        "jawira/case-converter": "^3.5"
     }
 }
