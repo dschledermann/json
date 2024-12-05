@@ -165,7 +165,7 @@ See the test suite for more examples.
 ## Using the "Choice"
 
 In many cases you can expect multiple variant on an API reply or AMQP queue.
-Fortunately this packages also gives a conviniet way to handle that.
+Fortunately this packages also gives a convenient way to handle that.
 
 Consider that you have these choices:
 
@@ -179,7 +179,7 @@ final class Person
 }
 ```
 
-Or a coordinate:
+Or a car:
 
 ```php
 final class Car
