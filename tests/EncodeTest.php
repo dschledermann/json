@@ -95,13 +95,13 @@ class EncodeTest extends TestCase
         $obj = new ObjWithInternalArray(
             'Skeletor',
             [
-                new SomeSubObj(77.2134),
-                new SomeSubObj(1212.12),
+                new SomeSubObj(1.85),
+                new SomeSubObj(97.1),
             ],
         );
 
         $this->assertEquals(
-            '{"NAME":"Skeletor","OBJS":[{"VALUE":77.2134},{"VALUE":1212.12}]}',
+            '{"NAME":"Skeletor","OBJS":[{"VALUE":1.85},{"VALUE":97.1}]}',
             $encoder->encode($obj),
         );
     }

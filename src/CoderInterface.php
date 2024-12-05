@@ -12,6 +12,7 @@ interface CoderInterface
      * Use this callback to convert the keys
      * This is useful for converting to and from JSON objects where
      * the case is different from PHP's camelCase.
+     * The closure should take one string argument and return a string.
      */
     public function withKeyCaseConverter(Closure $converter): CoderInterface;
 
@@ -36,13 +37,16 @@ interface CoderInterface
     public function encodeArray(array $objects): string;
 
     /**
-     * Attempt to decode JSON into a given class type
+     * Attempt to decode JSON into a given class type.
+     * If successful it will return an object of the same type as given in the
+     * className argument.
      */
     public function decode(string $src, string $className): object;
 
     /**
-     * Attempt to decode JSON into an array of a given class type
+     * Attempt to decode JSON into an array of a given class type.
+     * If successful it will return an array of objects of the same type as given
+     * in the className argument.
      */
     public function decodeArray(string $src, string $className): array;
 }
-

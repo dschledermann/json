@@ -160,3 +160,68 @@ SomeObj Object
 ```
 
 See the test suite for more examples.
+
+
+## Using the "Choice"
+
+In many cases you can expect multiple variant on an API reply or AMQP queue.
+Fortunately this packages also gives a conviniet way to handle that.
+
+Consider that you have these choices:
+
+A person:
+```php
+final class Person
+{
+    public function __construct(
+        public string $name,
+    ) {}
+}
+```
+
+Or a coordinate:
+
+```php
+final class Car
+{
+    public function __construct(
+        public string $brand,
+        public float $horsePowers,
+    ) {}
+}
+```
+
+You can now create a payload class that has each as a variant:
+
+```php
+use Dschledermann\JsonCoder\AbstractChoice;
+
+final class Payload extends AbstractChoice
+{
+    public ?Person $person,
+    public ?Car $car,
+}
+```
+
+Consider this payload:
+
+```json
+[
+  {"car":{"brand":"Volvo","horsePowers":193}},
+  {"car":{"brand":"Tesla","horsePowers":320}},
+  {"person":{"name":"Daniel"}}
+]
+```
+
+This PHP-code will decode it:
+
+```php
+$decoder = new Coder();
+$listOfChoices = $decoder->decodeArray($json, Payload::class);
+```
+
+The variable $listOfChoices will now contain Payload objects.
+Each of them can be queried what variant they using the AbstractChoice::getVariantType() method.
+
+
+
