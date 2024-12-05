@@ -45,7 +45,6 @@ final class Coder implements CoderInterface
         return json_encode($this->realEncode($object), $this->encodeFlags);
     }
 
-
     public function encodeArray(array $arr): string
     {
         return json_encode($this->realEncodeArray($arr), $this->encodeFlags);
@@ -78,8 +77,14 @@ final class Coder implements CoderInterface
     private function realEncodeArray(array $arr): array
     {
         $result = [];
-        foreach ($arr as $key => $obj) {
-            $result[$key] = $this->realEncode($obj);
+        foreach ($arr as $key => $element) {
+            if (is_object($element)) {
+                $result[$key] = $this->realEncode($element);
+            } else if (is_array($element)) {
+                $result[$key] = $this->realEncodeArray($element);
+            } else {
+                $result[$key] = $element;
+            }
         }
         return $result;
     }

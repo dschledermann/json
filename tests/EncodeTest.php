@@ -105,4 +105,30 @@ class EncodeTest extends TestCase
             $encoder->encode($obj),
         );
     }
+
+    public function testNestedArrayWithSimpleValues(): void
+    {
+        $obj = new ObjWithInternalArray(
+            'Heman',
+            [
+                'Julie, keep this with you, and Eternia will always be near.',
+                'People of Eternia, the war is over.',
+                'By the power of Greyskull!',
+            ]
+        );
+
+        $coder = (new Coder())->withEncodeFlags(JSON_PRETTY_PRINT);
+
+        $output = <<<END
+{
+    "name": "Heman",
+    "objs": [
+        "Julie, keep this with you, and Eternia will always be near.",
+        "People of Eternia, the war is over.",
+        "By the power of Greyskull!"
+    ]
+}
+END;
+        $this->assertEquals($output,$coder->encode($obj));
+    }
 }
