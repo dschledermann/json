@@ -112,13 +112,25 @@ final class Coder implements CoderInterface
         $callBack = $this->converter;
         foreach ($properties as $property) {
             $key = $callBack($property->getName());
-            if (class_exists($property->getType()->getName())) {
-                $property->setValue(
-                    $instance,
-                    $this->realDecode($src[$key], $property->getType()->getName()),
-                );
+
+            if (array_key_exists($key, $src)) {
+                if (class_exists($property->getType()->getName())) {
+                    $property->setValue(
+                        $instance,
+                        $this->realDecode($src[$key], $property->getType()->getName()),
+                    );
+                } else {
+                    $property->setValue($instance, $src[$key]);
+                }
             } else {
-                $property->setValue($instance, $src[$key]);
+                if ($property->getType()->allowsNull()) {
+                    $property->setValue($instance, null);
+                } else {
+                    throw new CoderException(sprintf(
+                        '[eeg7phaeM] The field "%s" was missing',
+                        $key,
+                    ));
+                }
             }
         }
 

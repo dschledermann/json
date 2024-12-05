@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Dschledermann\Json;
 
 use Dschledermann\JsonCoder\Coder;
+use Dschledermann\JsonCoder\CoderException;
 use Jawira\CaseConverter\Convert;
 use PHPUnit\Framework\TestCase;
 
@@ -21,6 +22,15 @@ final class UnpackSubObj
 {
     public function __construct(
         public float $value,
+    ) {}
+}
+
+
+final class AnotherDummy
+{
+    public function __construct(
+        public ?string $optionalField,
+        public string $requiredField,
     ) {}
 }
 
@@ -78,7 +88,24 @@ class DecodeTest extends TestCase
             ),
         );
     }
+
+    public function testDecodingRequiredMissingField(): void
+    {
+        $this->expectException(CoderException::class);
+        $this->expectExceptionMessage('[eeg7phaeM]');
+
+        $decoder = new Coder();
+        $src = '{"optionalField":"I am here"}';
+        $decoder->decode($src, AnotherDummy::class);
+    }
+
+    public function testDecodingOptinalMissingField(): void
+    {
+        $decoder = new Coder();
+        $src = '{"requiredField":"I am here"}';
+        $result = $decoder->decode($src, AnotherDummy::class);
+
+        $this->assertNull($result->optionalField);
+        $this->assertEquals("I am here", $result->requiredField);
+    }
 }
-
-
-    
