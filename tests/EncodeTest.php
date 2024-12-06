@@ -32,6 +32,14 @@ final class ObjWithInternalArray
     ) {}
 }
 
+final class ObjWithNullable
+{
+    public function __construct(
+        public string $someField,
+        public ?string $nullableField = null,
+    ) {}
+}
+
 class EncodeTest extends TestCase
 {
     public function testBasicEncoding(): void
@@ -106,10 +114,21 @@ class EncodeTest extends TestCase
         );
     }
 
+    public function testNullability(): void
+    {
+        $obj = new ObjWithNullable("Teela");
+
+        $coder = new Coder();
+        $this->assertEquals('{"someField":"Teela"}', $coder->encode($obj));
+
+        $coder = $coder->withEncodeNull();
+        $this->assertEquals('{"someField":"Teela","nullableField":null}', $coder->encode($obj));
+    }
+
     public function testNestedArrayWithSimpleValues(): void
     {
         $obj = new ObjWithInternalArray(
-            'Heman',
+            'He-man',
             [
                 'Julie, keep this with you, and Eternia will always be near.',
                 'People of Eternia, the war is over.',
@@ -121,7 +140,7 @@ class EncodeTest extends TestCase
 
         $output = <<<END
 {
-    "name": "Heman",
+    "name": "He-man",
     "objs": [
         "Julie, keep this with you, and Eternia will always be near.",
         "People of Eternia, the war is over.",

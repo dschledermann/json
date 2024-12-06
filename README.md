@@ -198,8 +198,8 @@ use Dschledermann\JsonCoder\AbstractChoice;
 
 final class Payload extends AbstractChoice
 {
-    public ?Person $person,
-    public ?Car $car,
+    public ?Person $person = null,
+    public ?Car $car = null,
 }
 ```
 
@@ -218,6 +218,48 @@ This PHP-code will decode it:
 ```php
 $decoder = new Coder();
 $listOfChoices = $decoder->decodeArray($json, Payload::class);
+print_r($listOfChoices);
+```
+
+Will output something like this:
+
+```
+Array
+(
+    [0] => Payload Object
+        (
+            [person] => 
+            [car] => Car Object
+                (
+                    [brand] => Volvo
+                    [horsePowers] => 193
+                )
+
+        )
+
+    [1] => Payload Object
+        (
+            [person] => 
+            [car] => Car Object
+                (
+                    [brand] => Tesla
+                    [horsePowers] => 320
+                )
+
+        )
+
+    [2] => Payload Object
+        (
+            [person] => Person Object
+                (
+                    [name] => Daniel
+                )
+
+            [car] => 
+        )
+
+)
+
 ```
 
 The variable $listOfChoices will now contain Payload objects.

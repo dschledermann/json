@@ -12,6 +12,7 @@ final class Coder implements CoderInterface
 {
     private int $encodeFlags = 0;
     private int $decodeFlags = 0;
+    private bool $skipNulls = true;
     private Closure $converter;
 
     public function __construct()
@@ -37,6 +38,20 @@ final class Coder implements CoderInterface
     {
         $clone = clone $this;
         $clone->encodeFlags = $flags;
+        return $clone;
+    }
+
+    public function withEncodeNull(): CoderInterface
+    {
+        $clone = clone $this;
+        $clone->skipNulls = false;
+        return $clone;
+    }
+
+    public function withSkipEncodeNull(): CoderInterface
+    {
+        $clone = clone $this;
+        $clone->skipNulls = true;
         return $clone;
     }
 
@@ -66,6 +81,8 @@ final class Coder implements CoderInterface
                 $result[$name] = $this->realEncode($value);
             } else if (is_array($value)) {
                 $result[$name] = $this->realEncodeArray($value);
+            } else if (is_null($value) && $this->skipNulls) {
+                // Skipping nulls
             } else {
                 $result[$name] = $value;
             }

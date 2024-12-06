@@ -33,9 +33,9 @@ final class Car
 
 final class Payload extends AbstractChoice
 {
-    public ?Person $person;
-    public ?Coordinate $coordinate;
-    public ?Car $car;
+    public ?Person $person = null;
+    public ?Coordinate $coordinate = null;
+    public ?Car $car = null;
 }
 
 class ChoiceTest extends TestCase

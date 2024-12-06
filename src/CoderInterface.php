@@ -27,6 +27,17 @@ interface CoderInterface
     public function withDecodeFlags(int $flags): CoderInterface;
 
     /**
+     * When encoding, skip the encoding of fields with a null values instead of setting them to null.
+     * This is the default.
+     */
+    public function withSkipEncodeNull(): CoderInterface;
+
+    /**
+     * When encoding, encoding null fields.
+     */
+    public function withEncodeNull(): CoderInterface;
+
+    /**
      * Encode object into JSON
      */
     public function encode(object $object): string;
