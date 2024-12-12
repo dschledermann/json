@@ -166,8 +166,20 @@ See the test suite for more examples.
 
 In many cases you can expect multiple variant on an API reply or AMQP queue.
 Fortunately this packages also gives a convenient way to handle that.
+This package has the AbstractChoice that will make it easier for you to define an
+umbrella for all the types you expected to receive.
 
-Consider that you have these choices:
+The assumption is that you only have one toplevel key,
+and that key defines what variant you are dealing with.
+
+There are some limitations on this:
+
+1. Each key has to be of a unique type.
+2. You should not have any additional properties on the payload choice class.
+3. Check for null output. Decoding and encoding is done with soft reflection "magic".
+   If there are no matches, you will receive a null value.
+
+Consider that you have these two choices:
 
 A person:
 ```php
@@ -198,8 +210,8 @@ use Dschledermann\JsonCoder\AbstractChoice;
 
 final class Payload extends AbstractChoice
 {
-    public ?Person $person = null,
-    public ?Car $car = null,
+    public ?Person $person = null;
+    public ?Car $car = null;
 }
 ```
 
@@ -228,7 +240,7 @@ Array
 (
     [0] => Payload Object
         (
-            [person] => 
+            [person] =>
             [car] => Car Object
                 (
                     [brand] => Volvo
@@ -239,7 +251,7 @@ Array
 
     [1] => Payload Object
         (
-            [person] => 
+            [person] =>
             [car] => Car Object
                 (
                     [brand] => Tesla
@@ -255,7 +267,7 @@ Array
                     [name] => Daniel
                 )
 
-            [car] => 
+            [car] =>
         )
 
 )
@@ -265,5 +277,33 @@ Array
 The variable $listOfChoices will now contain Payload objects.
 Each of them can be queried what variant they using the AbstractChoice::getVariantType() method.
 
+### Encoding a choice
 
+It's also useful to be able to wrap a variant object in the choice container.
+Consider this code:
 
+```php
+$person = new Person("Mr. Bean");
+$payload = Payload::createFromVariant($person);
+print_r($payload);
+```
+
+This will output something like:
+
+```
+Payload Object
+(
+    [person] => Person Object
+        (
+            [name] => Mr. Bean
+        )
+
+    [car] =>
+)
+```
+
+And if you encode it, the result will be this:
+
+```json
+{"person":{"name":"Mr. Bean"}}
+```

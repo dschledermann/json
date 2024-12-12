@@ -31,6 +31,12 @@ final class Car
     ) {}
 }
 
+final class SomeThingUnreleated {
+    public function __construct(
+        public string $something,
+    ) {}
+}
+
 final class Payload extends AbstractChoice
 {
     public ?Person $person = null;
@@ -53,6 +59,18 @@ class ChoiceTest extends TestCase
         $payload = $decoder->decode($json, Payload::class);
         $this->assertEquals(Coordinate::class, $payload->getVariantType());
         $this->assertEquals(0.3750001200618655, $payload->coordinate->x);
+    }
+
+    public function testCreateFromVariant(): void
+    {
+        $person = new Person("Dr Pjuskebusk");
+        $payload = Payload::createFromVariant($person);
+        $this->assertEquals($person, $payload->person);
+        $this->assertNull($payload->coordinate);
+        $this->assertNull($payload->car);
+
+        $unrelated = new SomeThingUnreleated("Nah nah nah");
+        $this->assertNull(Payload::createFromVariant($unrelated));
     }
 
     public function testMissingPayload(): void
