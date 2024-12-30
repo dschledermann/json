@@ -6,10 +6,10 @@ namespace Tests\Dschledermann\Json;
 
 use Dschledermann\JsonCoder\Coder;
 use Dschledermann\JsonCoder\CoderException;
-use Jawira\CaseConverter\Convert;
+use Dschledermann\JsonCoder\KeyConverter\CaseConverter;
 use PHPUnit\Framework\TestCase;
 
-final class UnpackDummy
+class UnpackDummy
 {
     public function __construct(
         public string $someFoo,
@@ -18,15 +18,18 @@ final class UnpackDummy
     ) {}
 }
 
-final class UnpackSubObj
+#[CaseConverter("Snake")]
+class SnakeDummy extends UnpackDummy
+{}
+
+class UnpackSubObj
 {
     public function __construct(
         public float $value,
     ) {}
 }
 
-
-final class AnotherDummy
+class AnotherDummy
 {
     public function __construct(
         public ?string $optionalField,
@@ -55,19 +58,17 @@ class DecodeTest extends TestCase
 
     public function testDecodingWithCaseConverter(): void
     {
-        $decoder = (new Coder())->withKeyCaseConverter(function(string $key): string {
-            return (new Convert($key))->toSnake();
-        });
+        $decoder = new Coder();
 
         $this->assertEquals(
-            new UnpackDummy(
+            new SnakeDummy(
                 "Hej, hej, Martin og Ketil",
                 666,
                 new UnpackSubObj(3.14159265359),
             ),
             $decoder->decode(
                 '{"some_foo":"Hej, hej, Martin og Ketil","some_bar":666,"some_sub_obj":{"value":3.14159265359}}',
-                UnpackDummy::class,
+                SnakeDummy::class,
             ),
         );
     }
@@ -99,7 +100,7 @@ class DecodeTest extends TestCase
         $decoder->decode($src, AnotherDummy::class);
     }
 
-    public function testDecodingOptinalMissingField(): void
+    public function testDecodingOptionalMissingField(): void
     {
         $decoder = new Coder();
         $src = '{"requiredField":"I am here"}';

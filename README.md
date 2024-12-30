@@ -90,6 +90,9 @@ then that's also possible.
 This is useful when interfacing with API's or languages where the naming convention differs from PHP's.
 
 ```php
+use Dschledermann\JsonCoder\KeyConverter\ToLower;
+
+#[ToLower]
 class SomeObj
 {
     public function __construct(
@@ -99,15 +102,7 @@ class SomeObj
 }
 
 $obj = new SomeObj("Walter White", 52);
-```
-
-Some examples:
-
-With arrow function for strtolower and pretty print:
-```php
-$coder = (new Coder())
-            ->withKeyCaseConverter(fn ($s) => strtolower($s))
-            ->withEncodeFlags(JSON_PRETTY_PRINT);
+$coder = (new Coder())->withEncodeFlags(JSON_PRETTY_PRINT);
 echo $coder->encode($obj);
 ```
 
@@ -119,13 +114,23 @@ Outputs:
 }
 ```
 
-Using the
-use jawira/case-converter to snake case:
+Using jawira/case-converter wrapper to snake case:
 
 ```php
-$coder = $coder = (new Coder())->withKeyCaseConverter(function(string $s): string {
-    return (new Convert($s))->toSnake();
-});
+
+use Dschledermann\JsonCoder\KeyConverter\CaseConverter;
+
+#[CaseConverter("Snake")]
+class SomeObj
+{
+    public function __construct(
+        public string $myString,
+        public int $myFancyInt,
+    ) {}
+}
+
+$obj = new SomeObj("Walter White", 52);
+$coder = new Coder();
 echo $coder->encode($obj);
 ```
 
@@ -137,27 +142,6 @@ Outputs:
 
 The same "direction" of the key case converter is used both for encoding and decoding JSON,
 so you don't have to configure the Coder in a different way depending on use.
-
-
-```php
-$str = '{"my.string":"Skyler White","my.fancy.int":40}';
-
-$coder = (new Coder())->withKeyCaseConverter(function(string $s): string {
-    return (new Convert($s))->toDot();
-});
-
-print_r($coder->decode($str, SomeObj::class));
-```
-
-This will output something like:
-
-```
-SomeObj Object
-(
-    [myString] => Skyler White
-    [myFancyInt] => 40
-)
-```
 
 See the test suite for more examples.
 
@@ -207,7 +191,9 @@ You can now create a payload class that has each as a variant:
 
 ```php
 use Dschledermann\JsonCoder\AbstractChoice;
+use Dschledermann\JsonCoder\Filter\SkipNull;
 
+#[SkipNull]
 final class Payload extends AbstractChoice
 {
     public ?Person $person = null;

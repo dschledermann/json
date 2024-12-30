@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Dschledermann\JsonCoder;
 
 use Dschledermann\JsonCoder\Coder;
-use Jawira\CaseConverter\Convert;
+use Dschledermann\JsonCoder\KeyConverter\ToUpper;
+use Dschledermann\JsonCoder\Filter\SkipNull;
+use Dschledermann\JsonCoder\KeyConverter\ToLower;
 use PHPUnit\Framework\TestCase;
 
 final class SomeDummy
@@ -13,6 +15,26 @@ final class SomeDummy
     public function __construct(
         public string $someFoo,
         public int $someBar,
+        public SomeSubObj $someSubObj,
+    ) {}
+}
+
+#[ToUpper]
+final class SomeDummyUpper
+{
+    public function __construct(
+        public string $someFoo,
+        public int $someBar,
+        public SomeSubObj $someSubObj,
+    ) {}
+}
+
+final class SomeDummyFieldLower
+{
+    public function __construct(
+        public string $someFoo,
+        public int $someBar,
+        #[ToLower]
         public SomeSubObj $someSubObj,
     ) {}
 }
@@ -32,13 +54,24 @@ final class ObjWithInternalArray
     ) {}
 }
 
-final class ObjWithNullable
+
+final class ObjWithNullableKeep
 {
     public function __construct(
         public string $someField,
         public ?string $nullableField = null,
     ) {}
 }
+
+#[SkipNull]
+final class ObjWithNullableSkip
+{
+    public function __construct(
+        public string $someField,
+        public ?string $nullableField = null,
+    ) {}
+}
+
 
 class EncodeTest extends TestCase
 {
@@ -57,28 +90,27 @@ class EncodeTest extends TestCase
 
     public function testEncodingWithCaseConverter(): void
     {
-        $obj = new SomeDummy(
+        $encoder = new Coder();
+
+        $obj = new SomeDummyUpper(
             "Hej, hej, Martin og Ketil",
             666,
             new SomeSubObj(3.14159265359),
         );
-
-        $encoder = (new Coder())->withKeyCaseConverter(fn ($s) => strtoupper($s));
 
         $this->assertSame(
             '{"SOMEFOO":"Hej, hej, Martin og Ketil","SOMEBAR":666,"SOMESUBOBJ":{"VALUE":3.14159265359}}',
             $encoder->encode($obj),
         );
 
-        $encoder = (new Coder())->withKeyCaseConverter(
-            function(string $from): string {
-                $convert = new Convert($from);
-                return $convert->toSnake();
-            }
+        $obj = new SomeDummyFieldLower(
+            "Hej, hej, Martin og Ketil",
+            666,
+            new SomeSubObj(3.14159265359),
         );
 
         $this->assertSame(
-            '{"some_foo":"Hej, hej, Martin og Ketil","some_bar":666,"some_sub_obj":{"value":3.14159265359}}',
+            '{"someFoo":"Hej, hej, Martin og Ketil","someBar":666,"somesubobj":{"value":3.14159265359}}',
             $encoder->encode($obj),
         );
     }
@@ -98,7 +130,7 @@ class EncodeTest extends TestCase
 
     public function testNestedArray(): void
     {
-        $encoder = (new Coder())->withKeyCaseConverter(fn ($s) => strtoupper($s));
+        $encoder = new Coder();
 
         $obj = new ObjWithInternalArray(
             'Skeletor',
@@ -109,20 +141,20 @@ class EncodeTest extends TestCase
         );
 
         $this->assertEquals(
-            '{"NAME":"Skeletor","OBJS":[{"VALUE":1.85},{"VALUE":97.1}]}',
+            '{"name":"Skeletor","objs":[{"value":1.85},{"value":97.1}]}',
             $encoder->encode($obj),
         );
     }
 
     public function testNullability(): void
     {
-        $obj = new ObjWithNullable("Teela");
+        $coder = new Coder();        
 
-        $coder = new Coder();
-        $this->assertEquals('{"someField":"Teela"}', $coder->encode($obj));
-
-        $coder = $coder->withEncodeNull();
+        $obj = new ObjWithNullableKeep("Teela");
         $this->assertEquals('{"someField":"Teela","nullableField":null}', $coder->encode($obj));
+
+        $obj = new ObjWithNullableSkip("Teela");
+        $this->assertEquals('{"someField":"Teela"}', $coder->encode($obj));
     }
 
     public function testNestedArrayWithSimpleValues(): void
