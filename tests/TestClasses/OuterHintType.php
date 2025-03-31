@@ -11,6 +11,9 @@ final class OuterHintType
 
     /** @var array<InnerArrayShapeType> */
     public array $secondInnerList;
+
+    /** @var \Tests\Dschledermann\JsonCoder\TestClasses\Other\InnerTypeInDifferentNamespace[] */
+    public array $thirdInnerList;
     
     public string $value;
     public SomethingElse $somethingElse;

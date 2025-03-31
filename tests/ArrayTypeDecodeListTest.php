@@ -17,7 +17,7 @@ final class ArrayTypeDecodeListTest extends TestCase
         $coder = new Coder();
 
         /** @var OuterHintType */
-        $value = $coder->decode('{"firstInnerList":[{"some":"hejsa","value":123},{"some":"Mummi","value":47}],"value":"davs","somethingElse":{"inner":666},"secondInnerList":[{"awesome":"Dude!"}]}', OuterHintType::class);
+        $value = $coder->decode('{"firstInnerList":[{"some":"hejsa","value":123},{"some":"Mummi","value":47}],"value":"davs","somethingElse":{"inner":666},"secondInnerList":[{"awesome":"Dude!"}],"thirdInnerList":[{"some":"test","value":999}]}', OuterHintType::class);
 
         $this->assertNotNull($value);
         $this->assertSame(OuterHintType::class, get_class($value));

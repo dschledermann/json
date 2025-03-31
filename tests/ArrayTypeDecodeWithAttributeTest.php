@@ -7,7 +7,7 @@ namespace Tests\Dschledermann\JsonCoder;
 use Dschledermann\JsonCoder\Coder;
 use PHPUnit\Framework\TestCase;
 use Tests\Dschledermann\JsonCoder\TestClasses\OuterAttributeType;
-use Tests\Dschledermann\JsonCoder\TestClasses\Other\InnerAttributeType;
+use Tests\Dschledermann\JsonCoder\TestClasses\Other\InnerTypeInDifferentNamespace;
 
 final class ArrayTypeDecodeWithAttributeTest extends TestCase
 {
@@ -21,6 +21,6 @@ final class ArrayTypeDecodeWithAttributeTest extends TestCase
         $this->assertNotNull($value);
         $this->assertSame(OuterAttributeType::class, get_class($value));
         $this->assertCount(2, $value->innerList);
-        $this->assertSame(InnerAttributeType::class, get_class($value->innerList[0]));
+        $this->assertSame(InnerTypeInDifferentNamespace::class, get_class($value->innerList[0]));
     }
 }

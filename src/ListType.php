@@ -35,10 +35,10 @@ final class ListType
             };
         } else {
             $this->simpleType = false;
-            if ($namespace) {
-                $this->typeName = $namespace . "\\" . $typeName;
-            } else {
+            if (substr($typeName, 0, 1) == "\\" || !$namespace) {
                 $this->typeName = $typeName;
+            } else {
+                $this->typeName = $namespace . "\\" . $typeName;
             }
         }
     }
