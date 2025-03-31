@@ -171,8 +171,36 @@ final class Coder implements CoderInterface
             if (array_key_exists($key, $src)) {
                 // It does.. cool
 
-                if (class_exists($property->getType()->getName())) {
-                    // Check if it should be another class
+                if ($type = $this->getArrayOfType($property, $reflector)) {
+                    // Is this an array with a given type?
+
+                    if ($type->isSimpleType()) {
+                        $expectedType = $type->getTypeName();
+                        $values = [];
+                        foreach($src[$key] as $innerValue) {
+                            if (gettype($innerValue) <> $expectedType) {
+                                throw new CoderException(sprintf(
+                                    '[zahShah6t] Unexpected value of type "%s" should be "%s"',
+                                    gettype($innerValue),
+                                    $expectedType,
+                                ));
+                            }
+                            $values[] = $innerValue;
+                        }
+                        $property->setValue($instance, $values);
+                    } else {
+                        $values = [];
+                        foreach($src[$key] as $innerValue) {
+                            $values[] = $this->realDecode(
+                                $innerValue,
+                                $type->getTypeName(),
+                                $keyConverterUse,
+                            );
+                        }
+                        $property->setValue($instance, $values);
+                    }
+                } else if (class_exists($property->getType()->getName())) {
+                    // Is this a another class
 
                     // Recurse into that..
                     $property->setValue(
@@ -184,7 +212,7 @@ final class Coder implements CoderInterface
                         ),
                     );
                 } else {
-                    // If it's not a class, decode and assign
+                    // If it's neither an array nor a class, decode and assign
                     $decoder = $this->getValueDecoder($property);
                     if ($decoder) {
                         $property->setValue($instance, $decoder->decode($src[$key]));
@@ -255,6 +283,44 @@ final class Coder implements CoderInterface
                 return $instance;
             }
         }
+        return null;
+    }
+
+    private function getArrayOfType(
+        ReflectionProperty $property,
+        ReflectionClass $reflectionClass,
+    ): ?TypeCategory
+    {
+        // Is it even an array?
+        if ($property->getType() <> 'array') {
+            return null;
+        }
+
+        // Look for a ListType attribute
+        $attribute = $property->getAttributes(ListType::class);
+
+        // If we have this, then we have a solid match
+        if (array_key_exists(0, $attribute)) {
+            return TypeCategory::create($attribute[0]->newInstance()->getType());
+        }
+
+        // Is there a docblock?
+        $docblock = $property->getDocComment();
+        if (!$docblock) {
+            return null;
+        }
+
+        // Search for the type declaration
+        $namespace = $reflectionClass->getNamespaceName();
+        if (preg_match('/@var (.+)\[\]/', $docblock, $matches)) {
+            return TypeCategory::create($matches[1], $namespace);
+        }
+
+        if (preg_match('/@var array<(.+)>/', $docblock, $matches)) {
+            return TypeCategory::create($matches[1], $namespace);
+        }
+
+        // Guess we can't do it..
         return null;
     }
 }

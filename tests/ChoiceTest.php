@@ -92,7 +92,10 @@ class ChoiceTest extends TestCase
 
         $this->assertSame(3, count($listOfChoices));
         $this->assertEquals(Car::class, $listOfChoices[0]->getVariantType());
+        $this->assertEquals("Volvo", $listOfChoices[0]->car->brand);
         $this->assertEquals(Car::class, $listOfChoices[1]->getVariantType());
+        $this->assertEquals("Tesla", $listOfChoices[1]->car->brand);
         $this->assertEquals(Person::class, $listOfChoices[2]->getVariantType());
+        $this->assertEquals("Daniel", $listOfChoices[2]->person->name);
     }
 }
