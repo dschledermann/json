@@ -9,21 +9,47 @@ use Attribute;
 #[Attribute]
 final class ListType
 {
-    private string $className;
+    private bool $simpleType = true;
+    private string $typeName;
     
-    public function __construct(string $className)
+    public function __construct(string $typeName, string $namespace = '')
     {
-        if (!class_exists($className)) {
-            throw new CoderException(sprintf(
-                "[Ahph5ahba] class %s was not found",
-                $className,
-            ));
+        if (in_array(
+            $typeName,
+            [
+                'bool',
+                'boolean',
+                'string',
+                'int',
+                'integer',
+                'float',
+                'double',
+            ],
+        )) {
+            $this->simpleType = true;
+            $this->typeName = match ($typeName) {
+                'bool' => 'boolean',
+                'int' => 'integer',
+                'float' => 'double',
+                default => $typeName,
+            };
+        } else {
+            $this->simpleType = false;
+            if ($namespace) {
+                $this->typeName = $namespace . "\\" . $typeName;
+            } else {
+                $this->typeName = $typeName;
+            }
         }
-        $this->className = $className;
+    }
+
+    public function isSimpleType(): bool
+    {
+        return $this->simpleType;
     }
 
     public function getType(): string
     {
-        return $this->className;
+        return $this->typeName;
     }
 }

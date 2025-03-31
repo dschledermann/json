@@ -19,6 +19,13 @@ final class Coder implements CoderInterface
     private int $encodeFlags = 0;
     private int $decodeFlags = 0;
 
+    /**
+     * Flags to pass on the json_decode
+     *
+     * @param int $flags   Flags to pass to json_decode
+     *
+     * @return Coderinterface
+     */
     public function withDecodeFlags(int $flags): CoderInterface
     {
         $clone = clone $this;
@@ -26,6 +33,13 @@ final class Coder implements CoderInterface
         return $clone;
     }
 
+    /**
+     * Flags to pass on the json_encode
+     *
+     * @param int $flags   Flags to pass to json_encode
+     *
+     * @return Coderinterface
+     */
     public function withEncodeFlags(int $flags): CoderInterface
     {
         $clone = clone $this;
@@ -33,6 +47,13 @@ final class Coder implements CoderInterface
         return $clone;
     }
 
+    /**
+     * Encode an object as JSON
+     *
+     * @param  object  $object  Any object you wish to encode
+     *
+     * @return string           JSON-string
+     */
     public function encode(object $object): string
     {
         return json_encode(
@@ -41,6 +62,13 @@ final class Coder implements CoderInterface
         );
     }
 
+    /**
+     * Encode an array as JSON
+     *
+     * @param  array  $arr      Any array you wish to encode
+     *
+     * @return string           JSON-string
+     */
     public function encodeArray(array $arr): string
     {
         return json_encode(
@@ -127,6 +155,14 @@ final class Coder implements CoderInterface
         return $result;
     }
 
+    /**
+     * Decode JSON into an object of specific type.
+     *
+     * @param string $src        JSON string
+     * @param string $className  Target class for decoding
+     *
+     * @return object            Object of type defined in $classname
+     */
     public function decode(string $src, string $className): object
     {
         return $this->realDecode(
@@ -136,6 +172,14 @@ final class Coder implements CoderInterface
         );
     }
 
+    /**
+     * Decode JSON into an array of objects of specific type.
+     *
+     * @param string $src        JSON string
+     * @param string $className  Target class for decoding
+     *
+     * @return array             Array of objects of type defined in $classname
+     */
     public function decodeArray(string $str, string $className): array
     {
         $result = [];
@@ -171,11 +215,11 @@ final class Coder implements CoderInterface
             if (array_key_exists($key, $src)) {
                 // It does.. cool
 
-                if ($type = $this->getArrayOfType($property, $reflector)) {
+                if ($type = $this->getArrayListType($property, $reflector)) {
                     // Is this an array with a given type?
 
                     if ($type->isSimpleType()) {
-                        $expectedType = $type->getTypeName();
+                        $expectedType = $type->getType();
                         $values = [];
                         foreach($src[$key] as $innerValue) {
                             if (gettype($innerValue) <> $expectedType) {
@@ -193,7 +237,7 @@ final class Coder implements CoderInterface
                         foreach($src[$key] as $innerValue) {
                             $values[] = $this->realDecode(
                                 $innerValue,
-                                $type->getTypeName(),
+                                $type->getType(),
                                 $keyConverterUse,
                             );
                         }
@@ -286,10 +330,10 @@ final class Coder implements CoderInterface
         return null;
     }
 
-    private function getArrayOfType(
+    private function getArrayListType(
         ReflectionProperty $property,
         ReflectionClass $reflectionClass,
-    ): ?TypeCategory
+    ): ?ListType
     {
         // Is it even an array?
         if ($property->getType() <> 'array') {
@@ -301,23 +345,23 @@ final class Coder implements CoderInterface
 
         // If we have this, then we have a solid match
         if (array_key_exists(0, $attribute)) {
-            return TypeCategory::create($attribute[0]->newInstance()->getType());
+            return $attribute[0]->newInstance();
         }
 
-        // Is there a docblock?
+        // Is there a docblock we can create it from?
         $docblock = $property->getDocComment();
         if (!$docblock) {
             return null;
         }
 
-        // Search for the type declaration
+        // Search for the type declarations in supported formats
         $namespace = $reflectionClass->getNamespaceName();
         if (preg_match('/@var (.+)\[\]/', $docblock, $matches)) {
-            return TypeCategory::create($matches[1], $namespace);
+            return new ListType($matches[1], $namespace);
         }
 
         if (preg_match('/@var array<(.+)>/', $docblock, $matches)) {
-            return TypeCategory::create($matches[1], $namespace);
+            return new ListType($matches[1], $namespace);
         }
 
         // Guess we can't do it..
