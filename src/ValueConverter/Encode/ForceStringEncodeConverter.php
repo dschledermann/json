@@ -10,9 +10,9 @@ use Attribute;
  * Force the conversion of the field into a string.
  */
 #[Attribute]
-final class ForceStringEncoder implements EncoderInterface
+final class ForceStringEncodeConverter implements EncodeConverterInterface
 {
-    public function encode(mixed $value): mixed
+    public function convert(mixed $value): mixed
     {
         return strval($value);
     }

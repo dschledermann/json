@@ -7,9 +7,9 @@ namespace Dschledermann\JsonCoder\ValueConverter\Decode;
 use Attribute;
 
 #[Attribute]
-final class AsFloatDecoder implements DecoderInterface
+final class AsFloatDecodeConverter implements DecodeConverterInterface
 {
-    public function decode(mixed $value): mixed
+    public function convert(mixed $value): mixed
     {
         return floatval($value);
     }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Dschledermann\JsonCoder;
 
-use Dschledermann\JsonCoder\Coder;
 use Dschledermann\JsonCoder\CoderException;
+use Dschledermann\JsonCoder\Decoder;
 use Dschledermann\JsonCoder\KeyConverter\CaseConverter;
 use PHPUnit\Framework\TestCase;
 
@@ -41,7 +41,7 @@ class DecodeTest extends TestCase
 {
     public function testBasicDecoding(): void
     {
-        $decoder = new Coder();
+        $decoder = Decoder::create(UnpackDummy::class);
 
         $this->assertEquals(
             new UnpackDummy(
@@ -51,14 +51,13 @@ class DecodeTest extends TestCase
             ),
             $decoder->decode(
                 '{"someFoo":"Hej, hej, Dr. Pjuskebusk","someBar":1,"someSubObj":{"value":1733.339149}}',
-                UnpackDummy::class,
             ),
         );
     }
 
     public function testDecodingWithCaseConverter(): void
     {
-        $decoder = new Coder();
+        $decoder = Decoder::create(SnakeDummy::class);
 
         $this->assertEquals(
             new SnakeDummy(
@@ -68,14 +67,13 @@ class DecodeTest extends TestCase
             ),
             $decoder->decode(
                 '{"some_foo":"Hej, hej, Martin og Ketil","some_bar":666,"some_sub_obj":{"value":3.14159265359}}',
-                SnakeDummy::class,
             ),
         );
     }
 
     public function testDecodingArray(): void
     {
-        $decoder = new Coder();
+        $decoder = Decoder::create(UnpackSubObj::class);
 
         $this->assertEquals(
             [
@@ -85,7 +83,6 @@ class DecodeTest extends TestCase
             ],
             $decoder->decodeArray(
                 '[{"value":1.733345411},{"value":1.733345424},{"value":1.733345435}]',
-                UnpackSubObj::class,
             ),
         );
     }
@@ -93,18 +90,18 @@ class DecodeTest extends TestCase
     public function testDecodingRequiredMissingField(): void
     {
         $this->expectException(CoderException::class);
-        $this->expectExceptionMessage('[eeg7phaeM]');
+        $this->expectExceptionMessage('[Aeghai9ja]');
 
-        $decoder = new Coder();
+        $decoder = Decoder::create(AnotherDummy::class);
         $src = '{"optionalField":"I am here"}';
-        $decoder->decode($src, AnotherDummy::class);
+        $decoder->decode($src);
     }
 
     public function testDecodingOptionalMissingField(): void
     {
-        $decoder = new Coder();
+        $decoder = Decoder::create(AnotherDummy::class);
         $src = '{"requiredField":"I am here"}';
-        $result = $decoder->decode($src, AnotherDummy::class);
+        $result = $decoder->decode($src);
 
         $this->assertNull($result->optionalField);
         $this->assertEquals("I am here", $result->requiredField);

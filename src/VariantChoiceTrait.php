@@ -7,7 +7,7 @@ namespace Dschledermann\JsonCoder;
 use ReflectionClass;
 use ReflectionObject;
 
-abstract class AbstractChoice
+trait VariantChoiceTrait
 {
     /**
      * Returns the first variant that is set, if any apply.
