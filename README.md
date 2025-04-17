@@ -37,8 +37,8 @@ $someObj = new SomeClass(
     45,
 );
 
-$coder = new Coder();
-echo $coder->encode($someObj);
+$encoder = Encoder::create(SomeClass::class);
+echo $encoder->encode($someObj);
 ```
 
 This will output:
@@ -60,9 +60,9 @@ class SomeClass
     ) {}
 }
 
-$coder = new Coder();
+$decoder = Decoder::create(SomeClass::class);
 $json = '{"name":"John Doe","age":45}';
-print_r($coder->decode($json, SomeClass::class));
+print_r($decoder->decode($json));
 ```
 
 This will output something like:
@@ -82,7 +82,7 @@ If you have some more advanced needs,
 then it's possible to pass options to the ```json_encode()``` and ```json_decode()``` functions.
 
 ```php
-$coder = (new Coder())->withEncodeFlags(JSON_PRETTY_PRINT);
+$encoder = Encoder::create(SomeClass::class, JSON_PRETTY_PRINT);
 ```
 
 If need to change the style of the keys,
@@ -93,7 +93,7 @@ This is useful when interfacing with API's or languages where the naming convent
 use Dschledermann\JsonCoder\KeyConverter\ToLower;
 
 #[ToLower]
-class SomeObj
+final class SomeObj
 {
     public function __construct(
         public string $myString,
@@ -102,8 +102,8 @@ class SomeObj
 }
 
 $obj = new SomeObj("Walter White", 52);
-$coder = (new Coder())->withEncodeFlags(JSON_PRETTY_PRINT);
-echo $coder->encode($obj);
+$encoder = Encoder::create(SomeObj::class, JSON_PRETTY_PRINT);
+echo $encoder->encode($obj);
 ```
 
 Outputs:
@@ -114,13 +114,13 @@ Outputs:
 }
 ```
 
-Using jawira/case-converter wrapper to snake case:
+Using snake case:
 
 ```php
 
-use Dschledermann\JsonCoder\KeyConverter\CaseConverter;
+use Dschledermann\JsonCoder\KeyConverter\ToSnakeCase;
 
-#[CaseConverter("Snake")]
+#[ToSnakeCase]
 class SomeObj
 {
     public function __construct(
@@ -129,9 +129,9 @@ class SomeObj
     ) {}
 }
 
+$encoder = Encoder::create(SomeObj::class);
 $obj = new SomeObj("Walter White", 52);
-$coder = new Coder();
-echo $coder->encode($obj);
+echo $encoder->encode($obj);
 ```
 
 Outputs:
@@ -145,12 +145,14 @@ so you don't have to configure the Coder in a different way depending on use.
 
 See the test suite for more examples.
 
+If you need something else, then make a class where you implement the KeyConverterInterface and make it an Attribute.
+
 
 ## Using the "Choice"
 
-In many cases you can expect multiple variant on an API reply or AMQP queue.
+In many cases you can expect multiple variants on an API reply or AMQP queue.
 Fortunately this packages also gives a convenient way to handle that.
-This package has the AbstractChoice that will make it easier for you to define an
+This package has the VariantChoiceTrait that will make it easier for you to define an
 umbrella for all the types you expected to receive.
 
 The assumption is that you only have one toplevel key,
@@ -190,12 +192,14 @@ final class Car
 You can now create a payload class that has each as a variant:
 
 ```php
-use Dschledermann\JsonCoder\AbstractChoice;
-use Dschledermann\JsonCoder\Filter\SkipNull;
+use Dschledermann\JsonCoder\VariantChoiceTrait;
+use Dschledermann\JsonCoder\Filter\Encode\SkipEncodeIfNull;
 
-#[SkipNull]
-final class Payload extends AbstractChoice
+#[SkipEncodeIfNull]
+final class Payload
 {
+	use VariantChoiceTrait;
+
     public ?Person $person = null;
     public ?Car $car = null;
 }
@@ -214,8 +218,8 @@ Consider this payload:
 This PHP-code will decode it:
 
 ```php
-$decoder = new Coder();
-$listOfChoices = $decoder->decodeArray($json, Payload::class);
+$decoder = Decoder::create(Payload::class);
+$listOfChoices = $decoder->decodeArray($json);
 print_r($listOfChoices);
 ```
 
@@ -261,7 +265,7 @@ Array
 ```
 
 The variable $listOfChoices will now contain Payload objects.
-Each of them can be queried what variant they using the AbstractChoice::getVariantType() method.
+Each of them can be queried what variant they using the VariantChoiceTrait::getVariantType() method.
 
 ### Encoding a choice
 
@@ -294,13 +298,15 @@ And if you encode it, the result will be this:
 {"person":{"name":"Mr. Bean"}}
 ```
 
+It's a very good idea to mark the top level choice class with the SkipEncodeIfNull-attribute.
+If not, then all the empty variants will be present with a null value, which is almost certainly not what you want.
+
 ### Decoding nested structures
 
 Nested arrays present a challenge in PHP as the array declaration does not contain limitations on the types in the array.
 There are a couple of conventions to work around this.
-The most commonly used is a docblock comment.
-The two formats supported are "T[]" and "array<T>".
-In many cases this is sufficient.
+The commonly used is a docblock comment indicating the array shape.
+The two formats supported in this package are "T[]" and "array<T>".
 
 ```php
 final class SomeType
@@ -369,7 +375,7 @@ SomeType Object
 ```
 
 This works for simple, native types and for types within the same namespace.
-If you are using types from differing namespaces, you have two options:
+If you are using types from other namespaces, you have two options:
 
 - Use the full path of the class in the type hinting
 - Use the ListType as an attribute to indicate.

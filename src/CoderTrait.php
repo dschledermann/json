@@ -36,7 +36,7 @@ trait CoderTrait
      * @param  ReflectionClass<T>   $reflectionClass  The class where the property is
      *                                                attached to.
      *
-     * @return ListType|null
+     * @return ListType
      */
     protected static function getArrayListType(
         ReflectionProperty $property,
@@ -54,7 +54,11 @@ trait CoderTrait
         // Is there a docblock we can create it from?
         $docblock = $property->getDocComment();
         if (!$docblock) {
-            return null;
+            throw new CoderException(sprintf(
+                "[ieyah4Ahp] No explicit ListType defined and no docblock for %s::%s",
+                $reflectionClass->getName(),
+                $property->getName(),
+            ));
         }
 
         // Search for the type declarations in supported formats
@@ -68,6 +72,10 @@ trait CoderTrait
         }
 
         // Guess we can't do it..
-        return null;
+        throw new CoderException(sprintf(
+            "[xuequ9Fee] Unable to read the docblock on %s::%s",
+            $reflectionClass->getName(),
+            $property->getName(),
+        ));
     }
 }

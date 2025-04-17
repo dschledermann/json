@@ -6,36 +6,9 @@ namespace Tests\Dschledermann\JsonCoder;
 
 use Dschledermann\JsonCoder\CoderException;
 use Dschledermann\JsonCoder\Decoder;
-use Dschledermann\JsonCoder\KeyConverter\CaseConverter;
+use Dschledermann\JsonCoder\Filter\Decode\SkipDecode;
+use Dschledermann\JsonCoder\KeyConverter\ToSnakeCase;
 use PHPUnit\Framework\TestCase;
-
-class UnpackDummy
-{
-    public function __construct(
-        public string $someFoo,
-        public int $someBar,
-        public UnpackSubObj $someSubObj,
-    ) {}
-}
-
-#[CaseConverter("Snake")]
-class SnakeDummy extends UnpackDummy
-{}
-
-class UnpackSubObj
-{
-    public function __construct(
-        public float $value,
-    ) {}
-}
-
-class AnotherDummy
-{
-    public function __construct(
-        public ?string $optionalField,
-        public string $requiredField,
-    ) {}
-}
 
 class DecodeTest extends TestCase
 {
@@ -106,4 +79,47 @@ class DecodeTest extends TestCase
         $this->assertNull($result->optionalField);
         $this->assertEquals("I am here", $result->requiredField);
     }
+
+    public function testDecodingWithSkippedField(): void
+    {
+        $decoder = Decoder::create(TypeWithSkippedField::class);
+        $src = '{"oneField":"meme","twoField":"This is skipped"}';
+        $result = $decoder->decode($src);
+
+        $this->assertSame("meme", $result->oneField);
+        $this->assertSame("This is kept", $result->twoField);
+    }
+}
+
+class UnpackDummy
+{
+    public function __construct(
+        public string $someFoo,
+        public int $someBar,
+        public UnpackSubObj $someSubObj,
+    ) {}
+}
+
+#[ToSnakeCase]
+class SnakeDummy extends UnpackDummy
+{}
+
+class UnpackSubObj
+{
+    public function __construct(
+        public float $value,
+    ) {}
+}
+
+class AnotherDummy
+{
+    public ?string $optionalField;
+    public string $requiredField;
+}
+
+class TypeWithSkippedField
+{
+    public string $oneField;
+    #[SkipDecode]
+    public string $twoField = 'This is kept';
 }

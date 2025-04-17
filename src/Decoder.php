@@ -10,6 +10,7 @@ use Dschledermann\JsonCoder\KeyConverter\KeyConverterInterface;
 use Dschledermann\JsonCoder\KeyConverter\PassThrough;
 use Dschledermann\JsonCoder\ValueConverter\Decode\DecodeConverterInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionProperty;
 
 /**
@@ -44,7 +45,15 @@ final class Decoder
     ): Decoder
     {
         $decodeUnits = [];
-        $reflector = new ReflectionClass($targetClass);
+
+        try {
+            $reflector = new ReflectionClass($targetClass);
+        } catch (ReflectionException $e) {
+            throw new CoderException(sprintf(
+                "[Aet7ush7e] Error creating decoder: '%s'",
+                $e->getMessage(),
+            ));
+        }
 
         $keyConverter = self::getKeyConverter($reflector);
         $keyConverter = $keyConverter?? $defaultKeyConverter;
@@ -70,30 +79,33 @@ final class Decoder
             $key = $keyConverterUse->getName($name);
             $type = $property->getType();
 
+            if (is_null($type)) {
+                throw new CoderException(sprintf(
+                    "[iKe7Jue9s] Missing type for %s::%s",
+                    $targetClass,
+                    $name,
+                ));
+            }
+
+            $decodeUnit = new DecodeUnit($property, $key);
+            $decodeUnits[] = $decodeUnit;
+
+            if ($valueConverter = self::getValueConverter($property)) {
+                $decodeUnit->setValueConverter($valueConverter);
+            }
+
             if (in_array($type->getName(), ['bool','string','int','float'])) {
-                $decodeUnits[] = DecodeUnit::simple(
-                    $property,
-                    $key,
-                    self::getValueConverter($property),
-                );
+                $decodeUnit->setDirectEncode(true);
             } elseif ($type->getName() == 'array') {
                 // Recurse into a list
-                if ($listType = self::getArrayListType($property, $reflector)) {
-                    $decodeUnits[] = DecodeUnit::listType(
-                        $property,
-                        $key,
-                        $listType
-                            ->withFlags($flags)
-                            ->withKeyConverter($keyConverterUse),
-                    );
-                } else {
-                    $decodeUnits[] = DecodeUnit::simple($property, $key);
-                }
+                $decodeUnit->setListType(
+                    self::getArrayListType($property, $reflector)
+                        ->setDecodeFilter($filterUse)
+                        ->setKeyConverter($keyConverterUse),
+                );
             } elseif (class_exists($type->getName())) {
                 // Apply as a substructure
-                $decodeUnits[] = DecodeUnit::subDecoder(
-                    $property,
-                    $key,
+                $decodeUnit->setSubDecoder(
                     Decoder::create(
                         $type->getName(),
                         $flags,
@@ -103,7 +115,7 @@ final class Decoder
                 );
             } else {
                 throw new CoderException(sprintf(
-                    "[ieWohf4ba] I don't know what to do with '%s'",
+                    "[ieWohf4ba] I don't know what to do with '%s'. Does the type exist?",
                     $type->getName(),
                 ));
             }
@@ -121,7 +133,7 @@ final class Decoder
      */
     public function decode(string $src): object
     {
-        return $this->decipher(json_decode($src, true, 512, $this->flags));
+        return $this->realDecode(json_decode($src, true, 512, $this->flags));
     }
 
     /**
@@ -136,8 +148,8 @@ final class Decoder
         $result = [];
         $src = json_decode($str, true, 512, $this->flags);
 
-        foreach ($src as $key => $val) {
-            $result[$key] = $this->decipher($val);
+        foreach ($src as $val) {
+            $result[] = $this->realDecode($val);
         }
 
         return $result;
@@ -148,7 +160,7 @@ final class Decoder
      *
      * @return T
      */
-    public function decipher(array $values): object
+    public function realDecode(array $values): object
     {
         $instance = $this->reflector->newInstanceWithoutConstructor();
 
@@ -175,7 +187,7 @@ final class Decoder
 
                     $reflection->setValue(
                         $instance,
-                        $subDecoder->decipher($values[$decodeBag->keyName]),
+                        $subDecoder->realDecode($values[$decodeBag->keyName]),
                     );
                     continue;
                 }
@@ -201,7 +213,7 @@ final class Decoder
                         foreach ($values[$decodeBag->keyName] as $subValue) {
                             $arrayValues[] = $listType
                                 ->getDecoder()
-                                ->decipher($subValue);
+                                ->realDecode($subValue);
                         }
                     } else {
                         throw new CoderException('[Chajaip9e] Unable to decode list');

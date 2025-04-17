@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Dschledermann\JsonCoder;
 
-use Dschledermann\JsonCoder\KeyConverter\CaseConverter;
 use Dschledermann\JsonCoder\KeyConverter\ToLower;
+use Dschledermann\JsonCoder\KeyConverter\ToSnakeCase;
 use Dschledermann\JsonCoder\KeyConverter\ToUpper;
 use Dschledermann\JsonCoder\KeyConverter\Rename;
+use Dschledermann\JsonCoder\KeyConverter\UpperCaseFirst;
 use PHPUnit\Framework\TestCase;
 
 class AttributeTest extends TestCase
@@ -21,20 +22,16 @@ class AttributeTest extends TestCase
         $this->assertSame('WELLHELLOTHERE', $toUpper->getName('wellHelloThere'));
     }
 
-    public function testHappyCaseConverter(): void
+    public function testSnakeCase(): void
     {
-        $caseConverter = new CaseConverter('Snake');
+        $caseConverter = new ToSnakeCase();
         $this->assertSame('well_hello_there', $caseConverter->getName('wellHelloThere'));
-
-        $caseConverter = new CaseConverter('Pascal');
-        $this->assertSame('WellHelloThere', $caseConverter->getName('wellHelloThere'));
     }
 
-    public function testUnknownCaseConverter(): void
+    public function testUcFirst(): void
     {
-        $caseConverter = new CaseConverter('DrPjuskebusk');
-        $this->expectExceptionMessage("[Thaqu4iet] Unknown format 'DrPjuskebusk'");
-        $caseConverter->getName('wellHelloThere');
+        $caseConverter = new UpperCaseFirst();
+        $this->assertSame("DavsDu", $caseConverter->getName("davsDu"));
     }
 
     public function testRename(): void

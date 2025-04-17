@@ -17,10 +17,9 @@ final class ListType
     private string $classRef = '';
     private ?Decoder $decoder = null;
     private ?Encoder $encoder = null;
-    private ?KeyConverterInterface $defaultKeyConverter = null;
+    private ?KeyConverterInterface $keyConverter = null;
     private ?EncodeFilterInterface $encodeFilter = null;
     private ?DecodeFilterInterface $decodeFilter = null;
-    private int $flags = 0;
 
     public function __construct(string $typeName, string $namespace = '')
     {
@@ -54,47 +53,22 @@ final class ListType
         }
     }
 
-    public static function createEncode(
-        string $typeName,
-        string $namespace,
-        int $flags,
-        KeyConverterInterface $keyConverter,
-        EncodeFilterInterface $encodeFilter,
-    ): ListType
+    public function setKeyConverter(KeyConverterInterface $keyConverter): ListType
     {
-        $listType = new ListType($typeName, $namespace);
-        $listType->flags = $flags;
-        $listType->defaultKeyConverter = $keyConverter;
-        $listType->encodeFilter = $encodeFilter;
-        return $listType;
+        $this->keyConverter = $keyConverter;
+        return $this;
     }
 
-    public function withFlags(int $flags): ListType
+    public function setEncodeFilter(EncodeFilterInterface $encodeFilter): ListType
     {
-        $clone = clone $this;
-        $clone->flags = $flags;
-        return $clone;
+        $this->encodeFilter = $encodeFilter;
+        return $this;
     }
 
-    public function withKeyConverter(KeyConverterInterface $keyConverter): ListType
+    public function setDecodeFilter(DecodeFilterInterface $decodeFilter): ListType
     {
-        $clone = clone $this;
-        $clone->defaultKeyConverter = $keyConverter;
-        return $clone;
-    }
-
-    public function withEncodeFilter(EncodeFilterInterface $encodeFilter): ListType
-    {
-        $clone = clone $this;
-        $clone->encodeFilter = $encodeFilter;
-        return $clone;
-    }
-
-    public function withDecodeFilter(DecodeFilterInterface $decodeFilter): ListType
-    {
-        $clone = clone $this;
-        $clone->decodeFilter = $decodeFilter;
-        return $clone;
+        $this->decodeFilter = $decodeFilter;
+        return $this;
     }
 
     public function isSimpleType(): bool
@@ -112,8 +86,8 @@ final class ListType
         if (is_null($this->decoder)) {
             $this->decoder = Decoder::create(
                 $this->classRef,
-                $this->flags,
-                $this->defaultKeyConverter,
+                0,
+                $this->keyConverter,
                 $this->decodeFilter,
             );
         }
@@ -125,8 +99,8 @@ final class ListType
         if (is_null($this->encoder)) {
             $this->encoder = Encoder::create(
                 $this->classRef,
-                $this->flags,
-                $this->defaultKeyConverter,
+                0,
+                $this->keyConverter,
                 $this->encodeFilter,
             );
         }

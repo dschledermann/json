@@ -9,60 +9,36 @@ use ReflectionProperty;
 
 final class DecodeUnit
 {
-    private function __construct(
+    public function __construct(
         public ReflectionProperty $reflection,
-        public bool $directDecode,
         public string $keyName,
-        public ?DecodeConverterInterface $valueConverter,
+        public bool $directDecode = false,
+        public ?DecodeConverterInterface $valueConverter = null,
         public ?ListType $listType = null,
         public ?Decoder $decoder = null,
     ) {}
 
-    public static function simple(
-        ReflectionProperty $reflection,
-        string $keyName,
-        ?DecodeConverterInterface $valueConverter,
-    ): DecodeUnit
+    public function setDirectEncode(bool $directEncode): self
     {
-        return new DecodeUnit(
-            $reflection,
-            true,
-            $keyName,
-            $valueConverter,
-            null,
-            null,
-        );
+        $this->directDecode = $directEncode;
+        return $this;
     }
 
-    public static function listType(
-        ReflectionProperty $reflection,
-        string $keyName,
-        ListType $listType,
-    ): DecodeUnit
+    public function setValueConverter(DecodeConverterInterface $valueConverter): self
     {
-        return new DecodeUnit(
-            $reflection,
-            false,
-            $keyName,
-            null,
-            $listType,
-            null,
-        );
+        $this->valueConverter = $valueConverter;
+        return $this;
     }
 
-    public static function subDecoder(
-        ReflectionProperty $reflection,
-        string $keyName,
-        Decoder $decoder,
-    ): DecodeUnit
+    public function setListType(ListType $listType): self
     {
-        return new DecodeUnit(
-            $reflection,
-            false,
-            $keyName,
-            null,
-            null,
-            $decoder,
-        );
+        $this->listType = $listType;
+        return $this;
+    }
+
+    public function setSubDecoder(Decoder $decoder): self
+    {
+        $this->decoder = $decoder;
+        return $this;
     }
 }

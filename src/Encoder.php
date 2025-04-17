@@ -10,6 +10,7 @@ use Dschledermann\JsonCoder\KeyConverter\KeyConverterInterface;
 use Dschledermann\JsonCoder\KeyConverter\PassThrough;
 use Dschledermann\JsonCoder\ValueConverter\Encode\EncodeConverterInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionProperty;
 
 /**
@@ -42,7 +43,14 @@ final class Encoder
     ): Encoder
     {
         $encodeUnits = [];
-        $reflector = new ReflectionClass($targetClass);
+        try {
+            $reflector = new ReflectionClass($targetClass);
+        } catch (ReflectionException $e) {
+            throw new CoderException(sprintf(
+                "[phuo9Coh9] Error creating Encoder: '%s'",
+                $e->getMessage(),
+            ));
+        }
 
         $keyConverter = self::getKeyConverter($reflector);
         $keyConverter = $keyConverter?? $defaultKeyConverter;
@@ -62,32 +70,32 @@ final class Encoder
             $key = $keyConverterUse->getName($name);
             $type = $property->getType();
 
+            if (is_null($type)) {
+                throw new CoderException(sprintf(
+                    "[hei3Ahcio] Missing type for %s::%s",
+                    $targetClass,
+                    $name,
+                ));
+            }
+
+            $encodeUnit = new EncodeUnit($property, $key, $filterUse);
+            $encodeUnits[] = $encodeUnit;
+
+            if ($valueConverter = self::getValueConverter($property)) {
+                $encodeUnit->setValueConverter($valueConverter);
+            }
+
             if (in_array($type->getName(), ['bool', 'string', 'int', 'float'])) {
-                $encodeUnits[] = EncodeUnit::simple(
-                    $property,
-                    $key,
-                    $filterUse,
-                    self::getValueConverter($property),
-                );
+                $encodeUnit->setDirectEncode(true);
             } elseif ($type->getName() == 'array') {
-                if ($listType = self::getArrayListType($property, $reflector)) {
-                    $encodeUnits[] = EncodeUnit::listType(
-                        $property,
-                        $key,
-                        $filterUse,
-                        $listType
-                            ->withFlags($flags)
-                            ->withKeyConverter($keyConverterUse)
-                            ->withEncodeFilter($filterUse),
+                $encodeUnit
+                    ->setListType(
+                        self::getArrayListType($property, $reflector)
+                            ->setKeyConverter($keyConverterUse)
+                            ->setEncodeFilter($filterUse)
                     );
-                } else {
-                    $encodeUnits[] = EncodeUnit::simple($property, $key, $filterUse, null);
-                }
             } elseif (class_exists($type->getName())) {
-                $encodeUnits[] = EncodeUnit::subEncoder(
-                    $property,
-                    $key,
-                    $filterUse,
+                $encodeUnit->setSubEncoder(
                     Encoder::create(
                         $type->getName(),
                         $flags,
@@ -97,7 +105,7 @@ final class Encoder
                 );
             } else {
                 throw new CoderException(sprintf(
-                    "[ohneeNg9y] I don't know what to do with '%s'",
+                    "[ohneeNg9y] I don't know what to do with '%s'. Does the type exist?",
                     $type->getName(),
                 ));
             }

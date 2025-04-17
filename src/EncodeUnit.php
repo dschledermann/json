@@ -10,68 +10,37 @@ use ReflectionProperty;
 
 final class EncodeUnit
 {
-    private function __construct(
+    public function __construct(
         public ReflectionProperty $reflection,
-        public bool $directEncode,
         public string $keyName,
         public EncodeFilterInterface $filter,
-        public ?EncodeConverterInterface $valueConverter,
-        public ?ListType $listType,
-        public ?Encoder $encoder,
+        public bool $directEncode = false,
+        public ?EncodeConverterInterface $valueConverter = null,
+        public ?ListType $listType = null,
+        public ?Encoder $encoder = null,
     ) {}
 
-    public static function simple(
-        ReflectionProperty $reflection,
-        string $keyName,
-        EncodeFilterInterface $filter,
-        ?EncodeConverterInterface $valueConverter,
-    ): EncodeUnit
+    public function setDirectEncode(bool $directEncode): self
     {
-        return new EncodeUnit(
-            $reflection,
-            true,
-            $keyName,
-            $filter,
-            $valueConverter,
-            null,
-            null,
-            null,
-        );
+        $this->directEncode = $directEncode;
+        return $this;
     }
 
-    public static function listType(
-        ReflectionProperty $reflection,
-        string $keyName,
-        EncodeFilterInterface $filter,
-        ListType $listType,
-    ): EncodeUnit
+    public function setValueConverter(EncodeConverterInterface $valueConverter): self
     {
-        return new EncodeUnit(
-            $reflection,
-            false,
-            $keyName,
-            $filter,
-            null,
-            $listType,
-            null,
-        );
+        $this->valueConverter = $valueConverter;
+        return $this;
     }
 
-    public static function subEncoder(
-        ReflectionProperty $reflection,
-        string $keyName,
-        EncodeFilterInterface $filter,
-        Encoder $encoder,
-    ): EncodeUnit
+    public function setListType(ListType $listType): self
     {
-        return new EncodeUnit(
-            $reflection,
-            false,
-            $keyName,
-            $filter,
-            null,
-            null,
-            $encoder,
-        );
+        $this->listType = $listType;
+        return $this;
+    }
+
+    public function setSubEncoder(Encoder $encoder): self
+    {
+        $this->encoder = $encoder;
+        return $this;
     }
 }
