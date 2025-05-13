@@ -196,7 +196,9 @@ final class Decoder
                     // This is an array of sorts
                     $arrayValues = [];
 
-                    if ($listType->isSimpleType()) {
+                    if ($listType->isRawArray()) {
+                        $arrayValues = $values[$decodeBag->keyName];
+                    } elseif ($listType->isSimpleType()) {
                         // Elements are simple values
                         foreach ($values[$decodeBag->keyName] as $subValue) {
                             if (gettype($subValue) == $listType->getType()) {

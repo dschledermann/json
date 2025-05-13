@@ -39,6 +39,17 @@ class AdvancedDecodeTest extends TestCase
         $this->assertSame("Davs", $payload->bar->someString);
         $this->assertSame(123, $payload->bar->someInt);
         $this->assertSame(123.123, $payload->bar->someFloat);
+
+        // Or something with a chaos value
+        $src = '{"baz":{"someString":"Davs","chaosBag":["PennyWise",true,123,3.14]}}';
+        $payload = $decoder->decode($src);
+
+        $this->assertNotNull($payload);
+        $this->assertNotNull($payload->baz);
+        $this->assertSame($payload->baz->chaosBag[0], "PennyWise");
+        $this->assertSame($payload->baz->chaosBag[1], true);
+        $this->assertSame($payload->baz->chaosBag[2], 123);
+        $this->assertSame($payload->baz->chaosBag[3], 3.14);
     }
 }
 
@@ -63,9 +74,19 @@ final class BarDec
     ) {}
 }
 
+final class BazDec
+{
+    public function __construct(
+        public string $someString,
+        /** @var raw-array */
+        public array $chaosBag,
+    ) {}
+}
+
 final class AdvancedDecPayload
 {
     use VariantChoiceTrait;
     public ?FooDec $foo = null;
     public ?BarDec $bar = null;
+    public ?BazDec $baz = null;
 }

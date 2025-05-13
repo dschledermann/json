@@ -188,7 +188,9 @@ final class Encoder
             // A sub list?
             if ($listType = $encodeUnit->listType) {
                 $subArr = [];
-                if ($listType->isSimpleType()) {
+                if ($listType->isRawArray()) {
+                    $subArr = $value;
+                } elseif ($listType->isSimpleType()) {
                     if ($valueConverter = $encodeUnit->valueConverter) {
                         foreach ($value as $subValue) {
                             $subArr[] = $valueConverter->convert($subValue);

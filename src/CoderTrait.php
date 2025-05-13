@@ -71,6 +71,10 @@ trait CoderTrait
             return new ListType($matches[1], $namespace);
         }
 
+        if (preg_match('/@var raw-array/', $docblock, $matches)) {
+            return new ListType('raw-array', $namespace);
+        }
+
         // Guess we can't do it..
         throw new CoderException(sprintf(
             "[xuequ9Fee] Unable to read the docblock on %s::%s",

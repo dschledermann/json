@@ -12,6 +12,7 @@ use Dschledermann\JsonCoder\KeyConverter\KeyConverterInterface;
 #[Attribute]
 final class ListType
 {
+    private bool $rawArray = false;
     private bool $simpleType = true;
     private string $typeName = '';
     private string $classRef = '';
@@ -23,7 +24,9 @@ final class ListType
 
     public function __construct(string $typeName, string $namespace = '')
     {
-        if (in_array(
+        if ($typeName === 'raw-array') {
+            $this->rawArray = true;
+        } else if (in_array(
             $typeName,
             [
                 'bool',
@@ -69,6 +72,11 @@ final class ListType
     {
         $this->decodeFilter = $decodeFilter;
         return $this;
+    }
+
+    public function isRawArray(): bool
+    {
+        return $this->rawArray;
     }
 
     public function isSimpleType(): bool

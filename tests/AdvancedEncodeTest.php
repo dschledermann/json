@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Dschledermann\JsonCoder;
 
 use Dschledermann\JsonCoder\Encoder;
-use Dschledermann\JsonCoder\AbstractChoice;
 use Dschledermann\JsonCoder\KeyConverter\Rename;
 use Dschledermann\JsonCoder\Filter\Encode\AllowEncode;
 use Dschledermann\JsonCoder\Filter\Encode\SkipEncodeIfNull;
 use Dschledermann\JsonCoder\Filter\Encode\SkipEncode;
+use Dschledermann\JsonCoder\ListType;
 use Dschledermann\JsonCoder\ValueConverter\Encode\AsIntEncodeConverter;
 use Dschledermann\JsonCoder\ValueConverter\Encode\ForceStringEncodeConverter;
 use Dschledermann\JsonCoder\VariantChoiceTrait;
@@ -33,6 +33,13 @@ class AdvancedEncodeTest extends TestCase
 
         $this->assertSame(
             '{"foo":{"name":"Mr. Hat","height":"179","minecraftPlayer":1}}',
+            $encoder->encode($payload),
+        );
+
+        $payload = AdvancedEncPayload::createFromVariant(new BazEnc(['Ultrakill', 6.626, true]));
+
+        $this->assertSame(
+            '{"baz":{"chaosBag":["Ultrakill",6.626,true]}}',
             $encoder->encode($payload),
         );
     }
@@ -64,6 +71,15 @@ final class FooEnc
     ) {}
 }
 
+#[AllowEncode]
+final class BazEnc
+{
+    public function __construct(
+        #[ListType("raw-array")]
+        public array $chaosBag,
+    ) {}
+}
+
 #[SkipEncodeIfNull]
 final class AdvancedEncPayload
 {
@@ -71,4 +87,5 @@ final class AdvancedEncPayload
 
     public ?FooEnc $foo = null;
     public ?BarEnc $bar = null;
+    public ?BazEnc $baz = null;
 }
