@@ -168,14 +168,26 @@ final class Encoder
                 continue;
             }
 
+            // Any explicit value encoding?
+            // This overrules everything else
+            if ($valueConverter = $encodeUnit->valueConverter) {
+                if ($encodeUnit->listType) {
+                    // Is it a list?
+                    $newValue = [];
+                    foreach($value as $k => $v) {
+                        $newValue[$k] = $valueConverter->encodeTo($v);
+                    }
+                    $arr[$encodeUnit->keyName] = $newValue;
+                } else {
+                    // Single value
+                    $arr[$encodeUnit->keyName] = $valueConverter->encodeTo($value);
+                }
+                continue;
+            }
+
             // Direct encoding?
             if ($encodeUnit->directEncode) {
-                // Apply convertion
-                if ($valueConverter = $encodeUnit->valueConverter) {
-                    $arr[$encodeUnit->keyName] = $valueConverter->convert($value);
-                } else {
-                    $arr[$encodeUnit->keyName] = $value;
-                }
+                $arr[$encodeUnit->keyName] = $value;
                 continue;
             }
 
@@ -193,7 +205,7 @@ final class Encoder
                 } elseif ($listType->isSimpleType()) {
                     if ($valueConverter = $encodeUnit->valueConverter) {
                         foreach ($value as $subValue) {
-                            $subArr[] = $valueConverter->convert($subValue);
+                            $subArr[] = $valueConverter->encodeTo($subValue);
                         }
                     } else {
                         $subArr = $value;

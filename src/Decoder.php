@@ -169,22 +169,30 @@ final class Decoder
 
             if (array_key_exists($decodeBag->keyName, $values)) {
 
-                if ($decodeBag->directDecode) {
-                    // This is a simple value
-
-                    if ($valueConverter = $decodeBag->valueConverter) {
+                // If we have a value decoder, then that rules
+                if ($valueConverter = $decodeBag->valueConverter) {
+                    if ($decodeBag->listType) {
+                        $newValue = [];
+                        foreach ($values[$decodeBag->keyName] as $k => $v) {
+                            $newValue[$k] = $valueConverter->decodeTo($v);
+                        }
+                        $reflection->setValue($instance, $newValue);
+                    } else {
                         $reflection->setValue(
                             $instance,
-                            $valueConverter->convert($values[$decodeBag->keyName]));
-                    } else {
-                        $reflection->setValue($instance, $values[$decodeBag->keyName]);
+                            $valueConverter->decodeTo($values[$decodeBag->keyName]),
+                        );
                     }
+                    continue;
+                }
+
+                if ($decodeBag->directDecode) {
+                    $reflection->setValue($instance, $values[$decodeBag->keyName]);
                     continue;
                 }
 
                 if ($subDecoder = $decodeBag->decoder) {
                     // This is an object of a defined type
-
                     $reflection->setValue(
                         $instance,
                         $subDecoder->realDecode($values[$decodeBag->keyName]),

@@ -9,7 +9,7 @@ use Attribute;
 #[Attribute]
 final class AsIntDecodeConverter implements DecodeConverterInterface
 {
-    public function convert(mixed $value): mixed
+    public function decodeTo(mixed $value): mixed
     {
         return intval($value);
     }

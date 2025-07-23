@@ -12,7 +12,7 @@ use Attribute;
 #[Attribute]
 final class AsIntEncodeConverter implements EncodeConverterInterface
 {
-    public function convert(mixed $value): mixed
+    public function encodeTo(mixed $value): mixed
     {
         return intval($value);
     }

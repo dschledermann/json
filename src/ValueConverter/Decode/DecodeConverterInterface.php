@@ -13,5 +13,5 @@ interface DecodeConverterInterface
      * @param   mixed   $value   The value of the field.
      * @return  mixed            The converted value.
      */
-    public function convert(mixed $value): mixed;
+    public function decodeTo(mixed $value): mixed;
 }

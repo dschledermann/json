@@ -12,7 +12,7 @@ use Attribute;
 #[Attribute]
 final class ForceStringEncodeConverter implements EncodeConverterInterface
 {
-    public function convert(mixed $value): mixed
+    public function encodeTo(mixed $value): mixed
     {
         return strval($value);
     }
