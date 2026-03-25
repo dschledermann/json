@@ -17,4 +17,9 @@ final class PassThrough implements KeyConverterInterface
     {
         return $fieldName;
     }
+
+    public function inheritToLists(): bool
+    {
+        return true;
+    }
 }

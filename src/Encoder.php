@@ -22,8 +22,9 @@ final class Encoder
 
     private function __construct(
         private int $flags,
-        /** @var EncodeUnit[] */
+        /** @var EncodeUnit[] $encodeUnits */
         private array $encodeUnits,
+        private bool $shouldSquashIndex,
     ) {}
 
     /**
@@ -60,6 +61,8 @@ final class Encoder
         $filter = $filter?? $defaultFilter;
         $filter = $filter?? new AllowEncode();
 
+        $shouldSquashIndex = boolval(count($reflector->getAttributes(SquashIndexes::class)));
+
         foreach ($reflector->getProperties() as $property) {
 
             $filterUse = self::getFilter($property) ?? $filter;
@@ -88,21 +91,31 @@ final class Encoder
             if (in_array($type->getName(), ['bool', 'string', 'int', 'float'])) {
                 $encodeUnit->setDirectEncode(true);
             } elseif ($type->getName() == 'array') {
-                $encodeUnit
-                    ->setListType(
-                        self::getArrayListType($property, $reflector)
-                            ->setKeyConverter($keyConverterUse)
-                            ->setEncodeFilter($filterUse)
-                    );
+                $listType = self::getArrayListType($property, $reflector)
+                    ->setKeyConverter($keyConverterUse)
+                    ->setEncodeFilter($filterUse);
+
+                if ($keyConverterUse->inheritToLists()) {
+                    $listType->setKeyConverter($keyConverterUse);
+                }
+
+                $encodeUnit->setListType($listType);
             } elseif (class_exists($type->getName())) {
-                $encodeUnit->setSubEncoder(
-                    Encoder::create(
+                if ($keyConverterUse->inheritToLists()) {
+                    $encodeUnit->setSubEncoder(Encoder::create(
                         $type->getName(),
                         $flags,
                         $keyConverterUse,
                         $filterUse,
-                    ),
-                );
+                    ));
+                } else {
+                    $encodeUnit->setSubEncoder(Encoder::create(
+                        $type->getName(),
+                        $flags,
+                        null,
+                        $filterUse,
+                    ));
+                }
             } else {
                 throw new CoderException(sprintf(
                     "[ohneeNg9y] I don't know what to do with '%s'. Does the type exist?",
@@ -111,7 +124,7 @@ final class Encoder
             }
         }
 
-        return new Encoder($flags, $encodeUnits);
+        return new Encoder($flags, $encodeUnits, $shouldSquashIndex);
     }
 
     /**
@@ -136,8 +149,14 @@ final class Encoder
     public function encodeArray(array $listOfObjs): string
     {
         $arr = [];
-        foreach ($listOfObjs as $obj) {
-            $arr[] = $this->realEncode($obj);
+        if ($this->shouldSquashIndex) {
+            foreach ($listOfObjs as $obj) {
+                $arr[] = $this->realEncode($obj);
+            }
+        } else {
+            foreach ($listOfObjs as $key => $obj) {
+                $arr[$key] = $this->realEncode($obj);
+            }
         }
         return json_encode($arr, $this->flags);
     }
@@ -199,20 +218,29 @@ final class Encoder
 
             // A sub list?
             if ($listType = $encodeUnit->listType) {
+                $shouldSquashIndex = $listType->shouldSquashIndex();
                 $subArr = [];
                 if ($listType->isRawArray()) {
                     $subArr = $value;
                 } elseif ($listType->isSimpleType()) {
                     if ($valueConverter = $encodeUnit->valueConverter) {
-                        foreach ($value as $subValue) {
-                            $subArr[] = $valueConverter->encodeTo($subValue);
+                        foreach ($value as $key => $subValue) {
+                            if ($shouldSquashIndex) {
+                                $subArr[] = $valueConverter->encodeTo($subValue);
+                            } else {
+                                $subArr[$key] = $valueConverter->encodeTo($subValue);
+                            }
                         }
                     } else {
                         $subArr = $value;
                     }
                 } elseif ($subEncoder = $listType->getEncoder()) {
-                    foreach ($value as $subValue) {
-                        $subArr[] = $subEncoder->realEncode($subValue);
+                    foreach ($value as $key => $subValue) {
+                        if ($shouldSquashIndex) {
+                            $subArr[] = $subEncoder->realEncode($subValue);
+                        } else {
+                            $subArr[$key] = $subEncoder->realEncode($subValue);
+                        }
                     }
                 } else {
                     throw new CoderException(sprintf(

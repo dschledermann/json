@@ -26,7 +26,6 @@ class ArrayTypeEncodeTest extends TestCase
     }
 }
 
-
 final class TypeWithConvertedArrayElements
 {
     public function __construct(

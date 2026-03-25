@@ -46,9 +46,12 @@ trait CoderTrait
         // Look for a ListType attribute
         $attribute = $property->getAttributes(ListType::class);
 
+        // Should we squash the indexes in the list?
+        $squashIndex = boolval(count($property->getAttributes(SquashIndexes::class)));
+
         // If we have this, then we have a solid match
         if (array_key_exists(0, $attribute)) {
-            return $attribute[0]->newInstance();
+            return $attribute[0]->newInstance()->setShouldSquashIndex($squashIndex);
         }
 
         // Is there a docblock we can create it from?
@@ -64,15 +67,15 @@ trait CoderTrait
         // Search for the type declarations in supported formats
         $namespace = $reflectionClass->getNamespaceName();
         if (preg_match('/@var (.+)\[\]/', $docblock, $matches)) {
-            return new ListType($matches[1], $namespace);
+            return new ListType($matches[1], $namespace, $squashIndex);
         }
 
         if (preg_match('/@var array<(.+)>/', $docblock, $matches)) {
-            return new ListType($matches[1], $namespace);
+            return new ListType($matches[1], $namespace, $squashIndex);
         }
 
         if (preg_match('/@var raw-array/', $docblock, $matches)) {
-            return new ListType('raw-array', $namespace);
+            return new ListType('raw-array', $namespace, $squashIndex);
         }
 
         // Guess we can't do it..

@@ -17,4 +17,9 @@ final class ToSnakeCase implements KeyConverterInterface
     {
         return ltrim(strtolower(preg_replace('/([A-Z])/', '_\\1', $fieldName)), '_');
     }
+
+    public function inheritToLists(): bool
+    {
+        return true;
+    }
 }

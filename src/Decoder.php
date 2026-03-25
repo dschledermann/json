@@ -26,6 +26,7 @@ final class Decoder
         private int $flags,
         /** @var DecodeUnit[] */
         private array $decodeUnits,
+        private bool $shouldSquashIndex,
     ) {}
 
     /**
@@ -63,6 +64,8 @@ final class Decoder
         $filter = $filter?? $defaultFilter;
         $filter = $filter?? new AllowDecode();
 
+        $shouldSquashIndex = boolval(count($reflector->getAttributes(SquashIndexes::class)));
+
         foreach ($reflector->getProperties() as $property) {
 
             // Should we even decode this field?
@@ -98,11 +101,14 @@ final class Decoder
                 $decodeUnit->setDirectEncode(true);
             } elseif ($type->getName() == 'array') {
                 // Recurse into a list
-                $decodeUnit->setListType(
-                    self::getArrayListType($property, $reflector)
-                        ->setDecodeFilter($filterUse)
-                        ->setKeyConverter($keyConverterUse),
-                );
+                $listType = self::getArrayListType($property, $reflector)
+                    ->setDecodeFilter($filterUse);
+
+                if ($keyConverterUse->inheritToLists()) {
+                    $listType->setKeyConverter($keyConverterUse);
+                }
+
+                $decodeUnit->setListType($listType);
             } elseif (class_exists($type->getName())) {
                 // Apply as a substructure
                 $decodeUnit->setSubDecoder(
@@ -121,7 +127,9 @@ final class Decoder
             }
         }
 
-        return new Decoder($reflector, $flags, $decodeUnits);
+
+
+        return new Decoder($reflector, $flags, $decodeUnits, $shouldSquashIndex);
     }
 
     /**
@@ -139,7 +147,8 @@ final class Decoder
     /**
      * Decode JSON into an array of objects of specific type.
      *
-     * @param string $src        JSON string
+     * @param string   $src         JSON string
+     * @param bool     $keepIndex   Should we keep array index?
      *
      * @return array<T>          Array of objects of type defined in $classname
      */
@@ -148,8 +157,14 @@ final class Decoder
         $result = [];
         $src = json_decode($str, true, 512, $this->flags);
 
-        foreach ($src as $val) {
-            $result[] = $this->realDecode($val);
+        if ($this->shouldSquashIndex) {
+            foreach ($src as $val) {
+                $result[] = $this->realDecode($val);
+            }
+        } else {
+            foreach ($src as $key => $val) {
+                $result[$key] = $this->realDecode($val);
+            }
         }
 
         return $result;
@@ -201,16 +216,24 @@ final class Decoder
                 }
 
                 if ($listType = $decodeBag->listType) {
+                    $shouldSquashIndexes = $listType->shouldSquashIndex();
+
                     // This is an array of sorts
                     $arrayValues = [];
 
                     if ($listType->isRawArray()) {
                         $arrayValues = $values[$decodeBag->keyName];
                     } elseif ($listType->isSimpleType()) {
+
+
                         // Elements are simple values
-                        foreach ($values[$decodeBag->keyName] as $subValue) {
+                        foreach ($values[$decodeBag->keyName] as $index => $subValue) {
                             if (gettype($subValue) == $listType->getType()) {
-                                $arrayValues[] = $subValue;
+                                if ($shouldSquashIndexes) {
+                                    $arrayValues[] = $subValue;
+                                } else {
+                                    $arrayValues[$index] = $subValue;
+                                }
                             } else {
                                 throw new CoderException(sprintf(
                                     "[Jae9ac9ai] Type mismatch got %s, expected %s",
@@ -220,10 +243,16 @@ final class Decoder
                             }
                         }
                     } elseif ($subDecoder = $listType->getDecoder()) {
-                        foreach ($values[$decodeBag->keyName] as $subValue) {
-                            $arrayValues[] = $listType
+                        foreach ($values[$decodeBag->keyName] as $index => $subValue) {
+                            $decodedValue = $listType
                                 ->getDecoder()
                                 ->realDecode($subValue);
+
+                            if ($shouldSquashIndexes) {
+                                $arrayValues[] = $decodedValue;
+                            } else {
+                                $arrayValues[$index] = $decodedValue;
+                            }
                         }
                     } else {
                         throw new CoderException('[Chajaip9e] Unable to decode list');

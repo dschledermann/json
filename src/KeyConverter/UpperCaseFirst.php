@@ -17,4 +17,9 @@ final class UpperCaseFirst implements KeyConverterInterface
     {
         return ucfirst($fieldName);
     }
+
+    public function inheritToLists(): bool
+    {
+        return true;
+    }
 }

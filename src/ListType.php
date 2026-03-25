@@ -22,8 +22,11 @@ final class ListType
     private ?EncodeFilterInterface $encodeFilter = null;
     private ?DecodeFilterInterface $decodeFilter = null;
 
-    public function __construct(string $typeName, string $namespace = '')
-    {
+    public function __construct(
+        string $typeName,
+        string $namespace = '',
+        private bool $squashIndexes = false,
+    ) {
         if ($typeName === 'raw-array') {
             $this->rawArray = true;
         } else if (in_array(
@@ -74,6 +77,12 @@ final class ListType
         return $this;
     }
 
+    public function setShouldSquashIndex(bool $squashIndex): ListType
+    {
+        $this->squashIndexes = $squashIndex;
+        return $this;
+    }
+
     public function isRawArray(): bool
     {
         return $this->rawArray;
@@ -87,6 +96,11 @@ final class ListType
     public function getType(): string
     {
         return $this->typeName;
+    }
+
+    public function shouldSquashIndex(): bool
+    {
+        return $this->squashIndexes;
     }
 
     public function getDecoder(): Decoder

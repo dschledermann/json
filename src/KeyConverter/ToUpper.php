@@ -16,4 +16,9 @@ final class ToUpper implements KeyConverterInterface
     {
         return strtoupper($fieldName);
     }
+
+    public function inheritToLists(): bool
+    {
+        return true;
+    }
 }

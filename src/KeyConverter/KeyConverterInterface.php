@@ -19,4 +19,12 @@ interface KeyConverterInterface
      * @return string              Name in the JSON stream.
      */
     public function getName(string $fieldName): string;
+
+    /**
+     * Tell the encoder and decoder if this key converter is supposed to be inherited
+     * to substructures.
+     *
+     * @return bool
+     */
+    public function inheritToLists(): bool;
 }

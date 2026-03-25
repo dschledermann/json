@@ -21,4 +21,9 @@ final class Rename implements KeyConverterInterface
     {
         return $this->intoName;
     }
+
+    public function inheritToLists(): bool
+    {
+        return false;
+    }
 }

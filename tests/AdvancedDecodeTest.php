@@ -11,6 +11,7 @@ use Dschledermann\JsonCoder\ValueConverter\Decode\AsFloatDecodeConverter;
 use Dschledermann\JsonCoder\ValueConverter\Decode\AsIntDecodeConverter;
 use Dschledermann\JsonCoder\VariantChoiceTrait;
 use PHPUnit\Framework\TestCase;
+use Tests\Dschledermann\JsonCoder\TestClasses\InnerListType;
 
 class AdvancedDecodeTest extends TestCase
 {

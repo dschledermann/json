@@ -16,4 +16,9 @@ final class ToLower implements KeyConverterInterface
     {
         return strtolower($fieldName);
     }
+
+    public function inheritToLists(): bool
+    {
+        return true;
+    }
 }
