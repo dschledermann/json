@@ -61,8 +61,6 @@ final class Encoder
         $filter = $filter?? $defaultFilter;
         $filter = $filter?? new AllowEncode();
 
-        $shouldSquashIndex = boolval(count($reflector->getAttributes(SquashIndexes::class)));
-
         foreach ($reflector->getProperties() as $property) {
 
             $filterUse = self::getFilter($property) ?? $filter;
@@ -88,7 +86,7 @@ final class Encoder
                 $encodeUnit->setValueConverter($valueConverter);
             }
 
-            if (in_array($type->getName(), ['bool', 'string', 'int', 'float'])) {
+            if (in_array($type->getName(), ['bool', 'string', 'int', 'float', 'mixed'])) {
                 $encodeUnit->setDirectEncode(true);
             } elseif ($type->getName() == 'array') {
                 $listType = self::getArrayListType($property, $reflector)
@@ -124,7 +122,11 @@ final class Encoder
             }
         }
 
-        return new Encoder($flags, $encodeUnits, $shouldSquashIndex);
+        return new Encoder(
+            $flags,
+            $encodeUnits,
+            boolval(count($reflector->getAttributes(SquashIndexes::class))),
+        );
     }
 
     /**
@@ -193,8 +195,16 @@ final class Encoder
                 if ($encodeUnit->listType) {
                     // Is it a list?
                     $newValue = [];
-                    foreach($value as $k => $v) {
-                        $newValue[$k] = $valueConverter->encodeTo($v);
+
+                    // Should we squash the indexes?
+                    if ($encodeUnit->listType->shouldSquashIndex()) {
+                        foreach($value as $v) {
+                            $newValue[] = $valueConverter->encodeTo($v);
+                        }
+                    } else {
+                        foreach($value as $k => $v) {
+                            $newValue[$k] = $valueConverter->encodeTo($v);
+                        }
                     }
                     $arr[$encodeUnit->keyName] = $newValue;
                 } else {
@@ -220,17 +230,9 @@ final class Encoder
             if ($listType = $encodeUnit->listType) {
                 $shouldSquashIndex = $listType->shouldSquashIndex();
                 $subArr = [];
-                if ($listType->isRawArray()) {
-                    $subArr = $value;
-                } elseif ($listType->isSimpleType()) {
-                    if ($valueConverter = $encodeUnit->valueConverter) {
-                        foreach ($value as $key => $subValue) {
-                            if ($shouldSquashIndex) {
-                                $subArr[] = $valueConverter->encodeTo($subValue);
-                            } else {
-                                $subArr[$key] = $valueConverter->encodeTo($subValue);
-                            }
-                        }
+                if ($listType->isSimpleType()) {
+                    if ($shouldSquashIndex) {
+                        $subArr = array_values($value);
                     } else {
                         $subArr = $value;
                     }

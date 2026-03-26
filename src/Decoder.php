@@ -64,8 +64,6 @@ final class Decoder
         $filter = $filter?? $defaultFilter;
         $filter = $filter?? new AllowDecode();
 
-        $shouldSquashIndex = boolval(count($reflector->getAttributes(SquashIndexes::class)));
-
         foreach ($reflector->getProperties() as $property) {
 
             // Should we even decode this field?
@@ -97,7 +95,7 @@ final class Decoder
                 $decodeUnit->setValueConverter($valueConverter);
             }
 
-            if (in_array($type->getName(), ['bool','string','int','float'])) {
+            if (in_array($type->getName(), ['bool','string','int','float', 'mixed'])) {
                 $decodeUnit->setDirectEncode(true);
             } elseif ($type->getName() == 'array') {
                 // Recurse into a list
@@ -127,9 +125,12 @@ final class Decoder
             }
         }
 
-
-
-        return new Decoder($reflector, $flags, $decodeUnits, $shouldSquashIndex);
+        return new Decoder(
+            $reflector,
+            $flags,
+            $decodeUnits,
+            boolval(count($reflector->getAttributes(SquashIndexes::class))),
+        );
     }
 
     /**
@@ -221,14 +222,10 @@ final class Decoder
                     // This is an array of sorts
                     $arrayValues = [];
 
-                    if ($listType->isRawArray()) {
-                        $arrayValues = $values[$decodeBag->keyName];
-                    } elseif ($listType->isSimpleType()) {
-
-
+                    if ($listType->isSimpleType()) {
                         // Elements are simple values
                         foreach ($values[$decodeBag->keyName] as $index => $subValue) {
-                            if (gettype($subValue) == $listType->getType()) {
+                            if (gettype($subValue) == $listType->getType() || $listType->getType() === 'mixed') {
                                 if ($shouldSquashIndexes) {
                                     $arrayValues[] = $subValue;
                                 } else {
@@ -296,7 +293,7 @@ final class Decoder
         return null;
     }
 
-    protected static function getFilter(
+    private static function getFilter(
         ReflectionClass|ReflectionProperty $reflect,
     ): ?DecodeFilterInterface
     {

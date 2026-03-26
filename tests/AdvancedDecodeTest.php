@@ -79,7 +79,7 @@ final class BazDec
 {
     public function __construct(
         public string $someString,
-        /** @var raw-array */
+        /** @var mixed[] */
         public array $chaosBag,
     ) {}
 }

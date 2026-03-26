@@ -6,6 +6,7 @@ namespace Tests\Dschledermann\JsonCoder;
 
 use Dschledermann\JsonCoder\Decoder;
 use Dschledermann\JsonCoder\Encoder;
+use Dschledermann\JsonCoder\KeyConverter\ToSnakeCase;
 use Dschledermann\JsonCoder\SquashIndexes;
 use PHPUnit\Framework\TestCase;
 
@@ -56,7 +57,40 @@ class IndexTest extends TestCase
         );
         $encoder = Encoder::create(TypeWithSublist::class);
         $encoded = $encoder->encode($obj);
-        $this->assertEquals('{"n":123,"list":[{"s":"go"},{"s":"home"}],"otherList":{"Wow!":{"s":"there"}}}', $encoded);
+
+        $this->assertEquals(
+            '{"n":123,"list":[{"s":"go"},{"s":"home"}],"otherList":{"Wow!":{"s":"there"}}}',
+            $encoded,
+        );
+    }
+
+    public function testEncodeSquashIndexOnPrimitiveType(): void
+    {
+        $primitiveList = ['a' => 'aa', 'b' => 'bb', 'c' => 123];
+        $elementWithList = new ElementWithList("something", $primitiveList, $primitiveList);
+        $encoder = Encoder::create(ElementWithList::class);
+        $json = $encoder->encode($elementWithList);
+        $this->assertEquals(
+            '{"str":"something","list_a":["aa","bb",123],"list_b":{"a":"aa","b":"bb","c":123}}',
+            $json,
+        );
+
+    }
+
+    public function testDecodeSquashIndexOnPrimitiveType(): void
+    {
+        $json = '{"str":"else","list_a":{"a":"aa","b":"bb","c":123},"list_b":{"a":"aa","b":"bb","c":123}}';
+        $decoder = Decoder::create(ElementWithList::class);
+        $obj = $decoder->decode($json);
+
+        $this->assertEquals(
+            new ElementWithList(
+                "else",
+                ['aa', 'bb', 123],
+                ['a' => 'aa', 'b' => 'bb', 'c' => 123],
+            ),
+            $obj,
+        );
     }
 }
 
@@ -84,5 +118,28 @@ class SubElement
 {
     public function __construct(
         public string $s,
+    ) {}
+}
+
+#[SquashIndexes]
+final class Element
+{
+    public function __construct(
+        public string $str,
+    ) {}
+}
+
+#[ToSnakeCase]
+final class ElementWithList
+{
+    public function __construct(
+        public string $str,
+
+        /** @var mixed[] */
+        #[SquashIndexes]
+        public array $listA,
+
+        /** @var mixed[] */
+        public array $listB,
     ) {}
 }

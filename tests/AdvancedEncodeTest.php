@@ -9,7 +9,6 @@ use Dschledermann\JsonCoder\KeyConverter\Rename;
 use Dschledermann\JsonCoder\Filter\Encode\AllowEncode;
 use Dschledermann\JsonCoder\Filter\Encode\SkipEncodeIfNull;
 use Dschledermann\JsonCoder\Filter\Encode\SkipEncode;
-use Dschledermann\JsonCoder\ListType;
 use Dschledermann\JsonCoder\ValueConverter\Encode\AsIntEncodeConverter;
 use Dschledermann\JsonCoder\ValueConverter\Encode\ForceStringEncodeConverter;
 use Dschledermann\JsonCoder\VariantChoiceTrait;
@@ -75,7 +74,7 @@ final class FooEnc
 final class BazEnc
 {
     public function __construct(
-        #[ListType("raw-array")]
+        /** @var mixed[] */
         public array $chaosBag,
     ) {}
 }

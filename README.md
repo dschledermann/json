@@ -415,3 +415,104 @@ final class SomeType
     public array $list;
 }
 ```
+
+
+### Dealing with array indexes
+
+When encoding or decoding structures,
+sometimes it's required to keep the indexes,
+and other places they should be discarded.
+This can matter because JSON distinguishes between maps and lists.
+You can control the behaviour of this using the "SquashIndexes" attribute.
+
+Consider this:
+
+```php
+final class Element
+{
+    public function __construct(
+        public string $str,
+    ) {}
+}
+```
+
+If you have this array:
+
+```php
+$a = ["a" => new Element("a"), "b" => new Element("b")];
+$encoder = Encoder::create(Element::class);
+
+$json = $encoder->encodeArray($a);
+```
+
+$json will now contain this string:
+
+```json
+{"a":{"str":"a"},"b":{"str":"b"}}
+```
+
+If you wish to discard the indexes to get a proper array, use the "SquashIndexes"-attribute:
+
+```php
+#[SquashIndexes]
+final class Element
+{
+    public function __construct(
+        public string $str,
+    ) {}
+}
+```
+
+And now you will get:
+
+```json
+[{"str":"a"},{"str":"b"}]
+```
+
+You can also use the attribute on lists inside a class.
+Example:
+
+```php
+final class ElementWithList
+{
+    public function __construct(
+        public string $str,
+        /** @var string[] */
+        public array $list,
+    ) {}
+}
+
+$b = new ElementWithList("something", ['a' => 'aa', 'b' => 'bb']);
+$encoder = Encoder::create(ElementWithList::class);
+$json = $encoder->encode($b);
+```
+
+Here, $json will keep the indexes in the inner list:
+
+```json
+{"str":"something","list":{"a":"aa","b":"bb"}}
+```
+
+Adding the "SquashIndexes"-attribute:
+
+```php
+final class ElementWithList
+{
+    public function __construct(
+        public string $str,
+        /** @var string[] */
+        #[SquashIndexes]
+        public array $list,
+    ) {}
+}
+
+$b = new ElementWithList("something", ['a' => 'aa', 'b' => 'bb']);
+$encoder = Encoder::create(ElementWithList::class);
+$json = $encoder->encode($b);
+```
+
+... and you will get this JSON instead:
+
+```json
+{"str":"something","list":["aa","bb"]}
+```

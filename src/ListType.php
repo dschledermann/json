@@ -12,7 +12,6 @@ use Dschledermann\JsonCoder\KeyConverter\KeyConverterInterface;
 #[Attribute]
 final class ListType
 {
-    private bool $rawArray = false;
     private bool $simpleType = true;
     private string $typeName = '';
     private string $classRef = '';
@@ -27,9 +26,7 @@ final class ListType
         string $namespace = '',
         private bool $squashIndexes = false,
     ) {
-        if ($typeName === 'raw-array') {
-            $this->rawArray = true;
-        } else if (in_array(
+        if (in_array(
             $typeName,
             [
                 'bool',
@@ -39,6 +36,7 @@ final class ListType
                 'integer',
                 'float',
                 'double',
+                'mixed',
             ],
         )) {
             $this->simpleType = true;
@@ -81,11 +79,6 @@ final class ListType
     {
         $this->squashIndexes = $squashIndex;
         return $this;
-    }
-
-    public function isRawArray(): bool
-    {
-        return $this->rawArray;
     }
 
     public function isSimpleType(): bool
